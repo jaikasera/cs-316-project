@@ -17,3 +17,7 @@ Products Guru: responsible for Products — Shambhavi Sinha
 Carts Guru: responsible for Cart / Order — Jai Kasera
 Sellers Guru: responsible for Inventory / Order Fulfillment — Evan Bulan?
 Social Guru: responsible for Feedback / Messaging — Blake Passe
+    * Designed product_reviews and seller_reviews tables in BCNF with appropriate primary keys, foreign keys, uniqueness constraints, and rating checks
+    * Defined eligibility logic with joins and specified summary rating computation (average and count) for products and sellers
+    * Worked on  “My Reviews” functionality integration with reverse chronological sorting and edit/delete support
+
