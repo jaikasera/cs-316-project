@@ -26,3 +26,12 @@ Social Guru: responsible for Feedback / Messaging — Blake Passe
     * Defined eligibility logic with joins and specified summary rating computation (average and count) for products and sellers
     * Worked on  “My Reviews” functionality integration with reverse chronological sorting and edit/delete support
 
+
+
+MILESTONE 3 
+
+Products Guru: responsible for Products — Shambhavi Sinha
+    * Implemented a backend API endpoint that returns the top k most expensive available products using a SQL query with ORDER BY price DESC and LIMIT k.
+    * Added the method Product.get_top_k_expensive(k) in app/models/product.py and the corresponding routes in app/products.py (/products/top/<int:k> for JSON and /products/top?k= for the HTML page).
+    * Created app/templates/top_products.html, which allows the user to input a value of k and displays the resulting products in a table.
+    * Registered the products blueprint in app/__init__.py and added a form on the homepage (index.html) to interact with the feature and demonstrate it during the project demo
