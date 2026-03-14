@@ -16,7 +16,7 @@ FROM Products
 WHERE id = :id
 ''',
                               id=id)
-        return Product(*(rows[0])) if rows is not None else None
+        return Product(*(rows[0])) if rows is not None and len(rows) > 0 else None
 
     @staticmethod
     def get_all(available=True):
@@ -26,4 +26,16 @@ FROM Products
 WHERE available = :available
 ''',
                               available=available)
+        return [Product(*row) for row in rows]
+
+    @staticmethod
+    def get_top_k_expensive(k):
+        rows = app.db.execute('''
+SELECT id, name, price, available
+FROM Products
+WHERE available = TRUE
+ORDER BY price DESC, id ASC
+LIMIT :k
+''',
+                              k=k)
         return [Product(*row) for row in rows]
