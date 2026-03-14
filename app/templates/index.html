@@ -4,6 +4,13 @@
 
 <br><br>
 
+<h2>Top k Most Expensive Products</h2>
+<form action="{{ url_for('products.top_k_products_page') }}" method="GET" class="container mb-4">
+  <label for="k">Enter k:</label>
+  <input type="number" name="k" min="1" value="5">
+  <input type="submit" value="Show Products">
+</form>
+
 <h2>Products for sale:</h2>
 <table class='table table-hover table-bordered container'>
   <thead class="thead-dark">
@@ -14,11 +21,11 @@
     </tr>
   </thead>
   <tbody>
-    {% for product in avail_products%}
+    {% for product in avail_products %}
       <tr>
-        <th scope="row">{{product.id}}</th>
-        <td>{{product.name}}</td>
-        <td>{{product.price}}</td>
+        <th scope="row">{{ product.id }}</th>
+        <td>{{ product.name }}</td>
+        <td>${{ product.price }}</td>
       </tr>
     {% endfor %}
   </tbody>
@@ -36,11 +43,11 @@
     </tr>
   </thead>
   <tbody>
-    {% for purchase in purchase_history%}
+    {% for purchase in purchase_history %}
       <tr>
-        <th scope="row">{{purchase.id}}</th>
-        <td>{{purchase.pid}}</td>
-        <td>{{purchase.time_purchased}}</td>
+        <th scope="row">{{ purchase.id }}</th>
+        <td>{{ purchase.pid }}</td>
+        <td>{{ purchase.time_purchased }}</td>
       </tr>
     {% endfor %}
   </tbody>
