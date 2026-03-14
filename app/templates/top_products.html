@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br><br>
+
+<h2>Top {{k}} Most Expensive Products</h2>
+
+<form action="{{ url_for('products.top_k_products_page') }}" method="GET">
+    <label for="k">Enter k:</label>
+    <input type="number" name="k" min="1" value="{{k}}">
+    <input type="submit" value="Show Products">
+</form>
+
+<br>
+
+{% if products %}
+<table class='table table-hover table-bordered container'>
+    <thead class="thead-dark">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Available</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.price }}</td>
+            <td>{{ product.available }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No products found.</p>
+{% endif %}
+
+{% endblock %}
