@@ -35,3 +35,7 @@ Products Guru: responsible for Products — Shambhavi Sinha
     * Added the method Product.get_top_k_expensive(k) in app/models/product.py and the corresponding routes in app/products.py (/products/top/<int:k> for JSON and /products/top?k= for the HTML page).
     * Created app/templates/top_products.html, which allows the user to input a value of k and displays the resulting products in a table.
     * Registered the products blueprint in app/__init__.py and added a form on the homepage (index.html) to interact with the feature and demonstrate it during the project demo
+Users Guru: Darren Li
+    * added search box for looking up purchases given a user_id (index.html) + corresponding endpoint (users.py, purchase.py) and result display screen (purchases.html)
+    * implemented error popup if user_id is not registered yet (see changes in base.html)
+        * in future, can consider implementing new feature for looking up users by firstname OR lastname OR email (or listing out all users)
