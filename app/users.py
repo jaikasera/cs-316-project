@@ -6,6 +6,8 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 
 from .models.user import User
+from .models.purchase import Purchase
+from .models.product import Product
 
 
 from flask import Blueprint
@@ -72,3 +74,23 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for('index.index'))
+
+
+@bp.route('/user_purchases')
+def user_purchases():
+    user_id = request.args.get('user_id', type=int)
+    user = User.get(user_id)
+    if user is None:
+        #did not find a user
+        flash('User not found')
+        return redirect(url_for('index.index', user_id=user_id))
+
+    purchases = Purchase.get_all_by_uid(user_id)
+    items = []
+    for p in purchases:
+        prod = Product.get(p.pid)
+        items.append({'purchase': p, 'product': prod})
+
+    return render_template('purchases.html', purchases=items, user=user)
+
+    
