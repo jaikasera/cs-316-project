@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br><br>
+
+<h2>Purchases for {{ user.firstname }} {{ user.lastname }}</h2>
+
+{% if purchases %}
+<table class='table table-hover table-bordered container'>
+    <thead class="thead-dark">
+        <tr>
+            <th>Purchase ID</th>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Time Purchased</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in purchases %}
+        <tr>
+            <td>{{ item.purchase.id }}</td>
+            <td>
+                {% if item.product %}
+                    {{ item.product.name }}
+                {% else %}
+                    (product removed)
+                {% endif %}
+            </td>
+            <td>{% if item.product %}${{ item.product.price }}{% else %}-{% endif %}</td>
+            <td>{{ item.purchase.time_purchased }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No purchases found for this user.</p>
+{% endif %}
+
+{% endblock %}
