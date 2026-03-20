@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from .models.cart import CartItem
+from .models.user import User
 
 bp = Blueprint('carts', __name__)
 
@@ -24,7 +25,12 @@ def cart_page():
     user_id = request.args.get('user_id', type=int)
     items = []
     total = 0.0
+    user = None
     if user_id is not None:
+        user = User.get(user_id)
+        if user is None:
+            flash('User not found')
+            return redirect(url_for('index.index'))
         items = CartItem.get_items_by_user(user_id)
         total = sum(item.line_total for item in items)
-    return render_template('cart.html', items=items, user_id=user_id, total=total)
+    return render_template('cart.html', items=items, user=user, user_id=user_id, total=total)
