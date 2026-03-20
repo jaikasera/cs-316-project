@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br><br>
+
+<h2>Seller Inventory for {{ seller_id }}</h2>
+
+{% if products and products|length > 0 %}
+<table class='table table-hover table-bordered container'>
+  <thead class="thead-dark">
+    <tr>
+      <th>Product ID</th>
+      <th>Product Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for product in products %}
+      <tr>
+        <th scope="row">{{ product.product_id }}</th>
+        <td>{{ product.name }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No products found in inventory for this seller.</p>
+{% endif %}
+
+{% endblock %}
+

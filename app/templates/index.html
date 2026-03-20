@@ -18,6 +18,13 @@
   <input type="submit" value="Show Purchases">
 </form>
 
+<h2>Seller Inventory Lookup</h2>
+<form action="{{ url_for('products.seller_inventory_page') }}" method="GET" class="container mb-4">
+  <label for="seller_id">Enter Seller ID:</label>
+  <input type="number" name="seller_id" min="0" value="{{ request.args.get('seller_id', default=0) }}">
+  <input type="submit" value="Show Inventory">
+</form>
+
 <h2>Products for sale:</h2>
 <table class='table table-hover table-bordered container'>
   <thead class="thead-dark">
