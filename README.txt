@@ -43,3 +43,19 @@ Sellers Guru: Evan Bulan
    * Added Inventory table (as created originally by Products Guru), added necessary copy to load.sh, and added dummy data to allow for interaction with the Inventory table in testing/demo
    * Implemented backend API endpoint that will return a list of all products of a given seller ID, only retrieving product ID and name for now (though selecting all columns in the SQL query that will be useful for seller dashboard later on)
    * Modeled execution and displayed results of this endpoint on te Flask frontend in similar style to previously created displays, where a user ID can be input and then the product IDs and names are returned
+Social Guru: Blake Passe
+   * Added ProductReviews and SellerReviews tables to db/create.sql with appropriate columns (user_id, product_id/seller_id, rating 1-5, review text, created_at timestamp) and uniqueness constraints
+   * Added seed data CSVs (db/data/ProductReviews.csv, db/data/SellerReviews.csv) and corresponding \COPY statements in db/load.sql
+   * Implemented Feedback.get_recent_by_uid(user_id) in app/models/feedback.py using a parameterized UNION ALL SQL query across both feedback tables, ordered by created_at DESC with LIMIT 5
+   * Created backend route GET /social/feedback?user_id=<id> in app/social.py that validates the user exists and returns the 5 most recent feedback posts
+   * Created app/templates/social_feedback.html with a User ID input form and results table showing feedback type, target ID, star rating, review text, and date
+   * Registered the social blueprint in app/__init__.py
+
+   Implementation file locations:
+     app/social.py                        (backend route)
+     app/models/feedback.py              (SQL query / model)
+     app/templates/social_feedback.html  (frontend template)
+     db/create.sql                        (ProductReviews + SellerReviews table definitions)
+     db/load.sql                          (seed data loading)
+     db/data/ProductReviews.csv           (product review seed data)
+     db/data/SellerReviews.csv            (seller review seed data)
