@@ -12,7 +12,7 @@
 
 {% if user_id is not none %}
   {% if items and items|length > 0 %}
-  <h3>Cart for User {{ user_id }}</h3>
+  <h3>Cart Items for {{ user.firstname }} {{ user.lastname }}</h3>
   <table class='table table-hover table-bordered container'>
     <thead class="thead-dark">
       <tr>
@@ -47,7 +47,7 @@
     </tfoot>
   </table>
   {% else %}
-  <p>No items found in cart for user {{ user_id }}.</p>
+  <p>No items found in cart for {{ user.firstname }} {{ user.lastname }}.</p>
   {% endif %}
 {% endif %}
 
