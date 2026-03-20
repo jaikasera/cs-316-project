@@ -39,3 +39,7 @@ Users Guru: Darren Li
     * added search box for looking up purchases given a user_id (index.html) + corresponding endpoint (users.py, purchase.py) and result display screen (purchases.html)
     * implemented error popup if user_id is not registered yet (see changes in base.html)
         * in future, can consider implementing new feature for looking up users by firstname OR lastname OR email (or listing out all users)
+Sellers Guru: Evan Bulan
+   * Added Inventory table (as created originally by Products Guru), added necessary copy to load.sh, and added dummy data to allow for interaction with the Inventory table in testing/demo
+   * Implemented backend API endpoint that will return a list of all products of a given seller ID, only retrieving product ID and name for now (though selecting all columns in the SQL query that will be useful for seller dashboard later on)
+   * Modeled execution and displayed results of this endpoint on te Flask frontend in similar style to previously created displays, where a user ID can be input and then the product IDs and names are returned
