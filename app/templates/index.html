@@ -18,6 +18,13 @@
   <input type="submit" value="Show Purchases">
 </form>
 
+<h2>Cart Items Lookup</h2>
+<form action="{{ url_for('carts.cart_page') }}" method="GET" class="container mb-4">
+  <label for="user_id">Enter User ID:</label>
+  <input type="number" name="user_id" min="0" value="">
+  <input type="submit" value="Show Cart Items">
+</form>
+
 <h2>Seller Inventory Lookup</h2>
 <form action="{{ url_for('products.seller_inventory_page') }}" method="GET" class="container mb-4">
   <label for="seller_id">Enter Seller ID:</label>

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br><br>
+
+<h2>Cart Items Lookup</h2>
+<form action="{{ url_for('carts.cart_page') }}" method="GET" class="container mb-4">
+  <label for="user_id">Enter User ID:</label>
+  <input type="number" name="user_id" min="0" value="{{ user_id if user_id is not none else '' }}">
+  <input type="submit" value="Show Cart Items">
+</form>
+
+{% if user_id is not none %}
+  {% if items and items|length > 0 %}
+  <h3>Cart for User {{ user_id }}</h3>
+  <table class='table table-hover table-bordered container'>
+    <thead class="thead-dark">
+      <tr>
+        <th>Product ID</th>
+        <th>Product Name</th>
+        <th>Seller</th>
+        <th>Quantity</th>
+        <th>Unit Price</th>
+        <th>Line Total</th>
+        <th>Added</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+        <tr>
+          <td>{{ item.product_id }}</td>
+          <td>{{ item.product_name }}</td>
+          <td>{{ item.seller_name }} (ID: {{ item.seller_id }})</td>
+          <td>{{ item.quantity }}</td>
+          <td>${{ "%.2f"|format(item.unit_price|float) }}</td>
+          <td>${{ "%.2f"|format(item.line_total) }}</td>
+          <td>{{ item.added_at }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="table-active">
+        <td colspan="5" class="text-right"><strong>Total:</strong></td>
+        <td><strong>${{ "%.2f"|format(total) }}</strong></td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+  {% else %}
+  <p>No items found in cart for user {{ user_id }}.</p>
+  {% endif %}
+{% endif %}
+
+{% endblock %}
