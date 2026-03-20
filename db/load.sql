@@ -26,3 +26,5 @@ SELECT pg_catalog.setval('public.productreviews_id_seq',
 SELECT pg_catalog.setval('public.sellerreviews_id_seq',
                          (SELECT MAX(id)+1 FROM SellerReviews),
                          false);
+
+\COPY cart_items(user_id, product_id, seller_id, quantity, unit_price) FROM 'CartItems.csv' WITH DELIMITER ',' NULL '' CSV
