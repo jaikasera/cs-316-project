@@ -59,3 +59,5 @@ Social Guru: Blake Passe
      db/load.sql                          (seed data loading)
      db/data/ProductReviews.csv           (product review seed data)
      db/data/SellerReviews.csv            (seller review seed data)
+
+LLMs were used to assist with this assignment
