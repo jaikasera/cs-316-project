@@ -43,6 +43,21 @@ Sellers Guru: Evan Bulan
    * Added Inventory table (as created originally by Products Guru), added necessary copy to load.sh, and added dummy data to allow for interaction with the Inventory table in testing/demo
    * Implemented backend API endpoint that will return a list of all products of a given seller ID, only retrieving product ID and name for now (though selecting all columns in the SQL query that will be useful for seller dashboard later on)
    * Modeled execution and displayed results of this endpoint on te Flask frontend in similar style to previously created displays, where a user ID can be input and then the product IDs and names are returned
+Carts Guru: Jai Kasera
+   * Added CartItems table to db/create.sql with columns (user_id, product_id, seller_id, quantity, unit_price, added_at) and foreign key constraints to Users, Products, and Users (seller)
+   * Added seed data CSV (db/data/CartItems.csv) and corresponding \COPY statement in db/load.sql
+   * Implemented CartItem.get_items_by_user(user_id) in app/models/cart.py using a parameterized SQL query that joins cart_items with Products and Users to retrieve product names and seller names, ordered by added_at DESC
+   * Created backend routes GET /cart (HTML page with user ID input and cart table display) and GET /cart/items/<user_id> (JSON API) in app/carts.py, with validation that redirects and flashes an error if the user ID is not found
+   * Created app/templates/cart.html with a User ID input form and results table showing product ID, product name, seller, quantity, unit price, line total, and date added, with a computed grand total
+
+   Implementation file locations:
+     app/carts.py                         (backend routes)
+     app/models/cart.py                   (SQL query / model)
+     app/templates/cart.html              (frontend template)
+     db/create.sql                        (CartItems table definition)
+     db/load.sql                          (seed data loading)
+     db/data/CartItems.csv                (cart item seed data)
+
 Social Guru: Blake Passe
    * Added ProductReviews and SellerReviews tables to db/create.sql with appropriate columns (user_id, product_id/seller_id, rating 1-5, review text, created_at timestamp) and uniqueness constraints
    * Added seed data CSVs (db/data/ProductReviews.csv, db/data/SellerReviews.csv) and corresponding \COPY statements in db/load.sql
