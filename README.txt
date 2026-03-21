@@ -30,6 +30,8 @@ Social Guru: responsible for Feedback / Messaging — Blake Passe
 
 MILESTONE 3 
 
+Link to demo: https://drive.google.com/file/d/1XSaOzB5qoASo1ZXaf36c-HJ-JXw0l6B3/view?usp=sharing 
+
 Products Guru: responsible for Products — Shambhavi Sinha
     * Implemented a backend API endpoint that returns the top k most expensive available products using a SQL query with ORDER BY price DESC and LIMIT k.
     * Added the method Product.get_top_k_expensive(k) in app/models/product.py and the corresponding routes in app/products.py (/products/top/<int:k> for JSON and /products/top?k= for the HTML page).
