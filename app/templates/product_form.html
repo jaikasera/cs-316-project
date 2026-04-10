@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>{% if product %}Edit Product{% else %}Create Product{% endif %}</h2>
+
+<form method="POST">
+  <label>Name:</label><br>
+  <input type="text" name="name" value="{{ product.name if product else '' }}" required><br><br>
+
+  <label>Description:</label><br>
+  <textarea name="description" required>{{ product.description if product else '' }}</textarea><br><br>
+
+  <label>Image URL:</label><br>
+  <input type="text" name="image_url" value="{{ product.image_url if product else '' }}"><br><br>
+
+  <label>Category:</label><br>
+  <select name="category_id" required>
+    {% for category in categories %}
+      <option value="{{ category.id }}"
+        {% if product and product.category_id == category.id %}selected{% endif %}>
+        {{ category.name }}
+      </option>
+    {% endfor %}
+  </select><br><br>
+
+  {% if product %}
+    <label>
+      <input type="checkbox" name="available" {% if product.available %}checked{% endif %}>
+      Available
+    </label><br><br>
+  {% endif %}
+
+  <input type="submit" value="{% if product %}Update{% else %}Create{% endif %}">
+</form>
+
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>{{ product.name }}</h2>
+
+{% if product.image_url %}
+  <img src="{{ product.image_url }}" width="250">
+{% endif %}
+
+<p><strong>Description:</strong> {{ product.description }}</p>
+<p><strong>Average Rating:</strong>
+  {% if avg_rating %}
+    {{ "%.2f"|format(avg_rating|float) }}
+  {% else %}
+    No ratings yet
+  {% endif %}
+</p>
+
+{% if current_user.is_authenticated and current_user.id == product.creator_id %}
+  <a href="{{ url_for('products.edit_product', product_id=product.id) }}">Edit Product</a>
+{% endif %}
+
+<h3>Sellers and Stock</h3>
+<table class='table table-hover table-bordered container'>
+  <thead>
+    <tr>
+      <th>Seller</th>
+      <th>Price</th>
+      <th>Quantity in Stock</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for seller in sellers %}
+    <tr>
+      <td>{{ seller.firstname }} {{ seller.lastname }}</td>
+      <td>${{ seller.price }}</td>
+      <td>{{ seller.quantity }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h3>Reviews</h3>
+{% if reviews %}
+  <ul>
+    {% for review in reviews %}
+      <li>
+        <strong>{{ review.rating }}/5</strong>
+        by {{ review.firstname }} {{ review.lastname }}<br>
+        {{ review.review }}<br>
+        <small>{{ review.created_at }}</small>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No reviews yet.</p>
+{% endif %}
+
+{% endblock %}

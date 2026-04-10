@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Browse Products</h2>
+
+<form action="{{ url_for('products.browse_products') }}" method="GET">
+  <input type="text" name="keyword" placeholder="Search name/description" value="{{ keyword }}">
+
+  <select name="category_id">
+    <option value="">All Categories</option>
+    {% for category in categories %}
+      <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
+        {{ category.name }}
+      </option>
+    {% endfor %}
+  </select>
+
+  <select name="sort_by">
+    <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+    <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+  </select>
+
+  <input type="submit" value="Apply">
+</form>
+
+<br>
+
+{% if current_user.is_authenticated %}
+  <a href="{{ url_for('products.create_product') }}">Create New Product</a>
+{% endif %}
+
+<table class='table table-hover table-bordered container'>
+  <thead>
+    <tr>
+      <th>Image</th>
+      <th>Name</th>
+      <th>Lowest Price</th>
+      <th>Average Rating</th>
+      <th>Details</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for product in products %}
+    <tr>
+      <td>
+        {% if product.image_url %}
+          <img src="{{ product.image_url }}" width="100">
+        {% endif %}
+      </td>
+      <td>{{ product.name }}</td>
+      <td>
+        {% if product.min_price %}
+          ${{ product.min_price }}
+        {% else %}
+          N/A
+        {% endif %}
+      </td>
+      <td>
+        {% if product.avg_rating %}
+          {{ "%.2f"|format(product.avg_rating|float) }}
+        {% else %}
+          No ratings
+        {% endif %}
+      </td>
+      <td><a href="{{ url_for('products.product_detail', product_id=product.id) }}">View</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}

@@ -63,3 +63,15 @@ Social Guru: Blake Passe
      db/data/SellerReviews.csv            (seller review seed data)
 
 LLMs were used to assist with this assignment
+
+
+
+MILESTONE 4
+
+Products Guru: responsible for Products — Shambhavi Sinha
+    Refactored the Product schema and model to support richer metadata (category, description, image) and moved pricing logic to Inventory.
+    Fixed multiple Flask/model integration bugs (constructor mismatches, missing fields, incorrect query outputs, JSON serialization issues).
+    Debugged and corrected database loading issues (CSV format, foreign key mismatches, sequence alignment, COPY errors).
+    Built and connected product browsing + detail pages, including seller inventory and review display.
+    Unified review handling by extending the Feedback model to support product reviews (instead of a separate ProductReview model).
+    Improved the homepage UI/UX, organizing it into a dashboard with cards, cleaner tables, and consistent labeling.
