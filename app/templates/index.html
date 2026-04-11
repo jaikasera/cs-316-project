@@ -3,6 +3,7 @@
 {% block content %}
 
 <div class="container mt-4 mb-5">
+
   <div class="p-4 mb-4 bg-light border rounded">
     <h1 class="mb-2">Mini Amazon Dashboard</h1>
     <p class="text-muted mb-3">
@@ -13,9 +14,52 @@
       <a class="btn btn-primary" href="{{ url_for('products.browse_products') }}">Browse / Search Products</a>
       {% if current_user.is_authenticated %}
         <a class="btn btn-success" href="{{ url_for('products.create_product') }}">Create New Product</a>
+        <a class="btn btn-outline-dark" href="{{ url_for('products.my_products') }}">My Products</a>
       {% endif %}
     </div>
   </div>
+
+  {% if recent_products %}
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h3 class="mb-0">Recently Added Products</h3>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        {% for product in recent_products %}
+        <div class="col-md-6 col-lg-3 mb-3">
+          <div class="card h-100">
+            {% if product.image_url %}
+              <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+            {% endif %}
+            <div class="card-body">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="card-text small">
+                Category:
+                {{ product.category_name if product.category_name else "Uncategorized" }}<br>
+
+                {% if product.min_price is not none %}
+                  Starting at ${{ product.min_price }}<br>
+                {% endif %}
+
+                {% if product.avg_rating is not none %}
+                  Rating: {{ "%.2f"|format(product.avg_rating|float) }}
+                {% else %}
+                  No ratings yet
+                {% endif %}
+              </p>
+              <a class="btn btn-sm btn-outline-dark"
+                 href="{{ url_for('products.product_detail', product_id=product.id) }}">
+                 View
+              </a>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <div class="row g-4 mb-4">
     <div class="col-md-6 col-lg-3">
@@ -39,7 +83,8 @@
           <p class="card-text text-muted">View purchase history for a specific user ID.</p>
           <form action="{{ url_for('users.user_purchases') }}" method="GET">
             <label class="form-label" for="user_id">User ID</label>
-            <input class="form-control mb-2" type="number" name="user_id" min="0" value="{{ request.args.get('user_id', default='') }}">
+            <input class="form-control mb-2" type="number" name="user_id" min="0"
+                   value="{{ request.args.get('user_id', default='') }}">
             <button class="btn btn-outline-primary w-100" type="submit">Show Purchases</button>
           </form>
         </div>
@@ -67,7 +112,8 @@
           <p class="card-text text-muted">Check what a seller currently has listed in inventory.</p>
           <form action="{{ url_for('products.seller_inventory_page') }}" method="GET">
             <label class="form-label" for="seller_id">Seller ID</label>
-            <input class="form-control mb-2" type="number" name="seller_id" min="0" value="{{ request.args.get('seller_id', default=0) }}">
+            <input class="form-control mb-2" type="number" name="seller_id" min="0"
+                   value="{{ request.args.get('seller_id', default=0) }}">
             <button class="btn btn-outline-primary w-100" type="submit">Show Inventory</button>
           </form>
         </div>
@@ -86,7 +132,10 @@
           <thead class="table-light">
             <tr>
               <th scope="col">Product ID</th>
-              <th scope="col">Product Name</th>
+              <th scope="col">Name</th>
+              <th scope="col">Category</th>
+              <th scope="col">Lowest Price</th>
+              <th scope="col">Average Rating</th>
               <th scope="col">Details</th>
             </tr>
           </thead>
@@ -95,8 +144,24 @@
               <tr>
                 <th scope="row">{{ product.id }}</th>
                 <td>{{ product.name }}</td>
+                <td>{{ product.category_name if product.category_name else "Uncategorized" }}</td>
                 <td>
-                  <a class="btn btn-sm btn-outline-dark" href="{{ url_for('products.product_detail', product_id=product.id) }}">
+                  {% if product.min_price is not none %}
+                    ${{ product.min_price }}
+                  {% else %}
+                    N/A
+                  {% endif %}
+                </td>
+                <td>
+                  {% if product.avg_rating is not none %}
+                    {{ "%.2f"|format(product.avg_rating|float) }}
+                  {% else %}
+                    No ratings
+                  {% endif %}
+                </td>
+                <td>
+                  <a class="btn btn-sm btn-outline-dark"
+                     href="{{ url_for('products.product_detail', product_id=product.id) }}">
                     View Product
                   </a>
                 </td>
@@ -152,6 +217,7 @@
       {% endif %}
     </div>
   </div>
+
 </div>
 
 {% endblock %}

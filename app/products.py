@@ -14,8 +14,18 @@ def browse_products():
     category_id = request.args.get('category_id', type=int)
     keyword = request.args.get('keyword', default='', type=str)
     sort_by = request.args.get('sort_by', default='price_asc', type=str)
+    min_price = request.args.get('min_price', type=float)
+    max_price = request.args.get('max_price', type=float)
+    min_rating = request.args.get('min_rating', type=float)
 
-    products = Product.search(category_id=category_id, keyword=keyword, sort_by=sort_by)
+    products = Product.search(
+        category_id=category_id,
+        keyword=keyword,
+        sort_by=sort_by,
+        min_price=min_price,
+        max_price=max_price,
+        min_rating=min_rating
+    )
     categories = Category.get_all()
 
     return render_template(
@@ -24,7 +34,10 @@ def browse_products():
         categories=categories,
         selected_category=category_id,
         keyword=keyword,
-        sort_by=sort_by
+        sort_by=sort_by,
+        min_price=min_price,
+        max_price=max_price,
+        min_rating=min_rating
     )
 
 
@@ -37,6 +50,7 @@ def product_detail(product_id):
     sellers = InventoryItem.get_sellers_for_product(product_id)
     reviews = Feedback.get_product_reviews(product_id)
     avg_rating = Feedback.get_product_average_rating(product_id)
+
     return render_template(
         'product_detail.html',
         product=product,
@@ -100,6 +114,13 @@ def edit_product(product_id):
     return render_template('product_form.html', categories=categories, product=product)
 
 
+@bp.route('/products/my')
+@login_required
+def my_products():
+    products = Product.get_by_creator(current_user.id)
+    return render_template('my_products.html', products=products)
+
+
 @bp.route('/products/top/<int:k>')
 def top_k_products_json(k):
     if k <= 0:
@@ -116,6 +137,7 @@ def top_k_products_json(k):
         }
         for row in products
     ])
+
 
 @bp.route('/products/top')
 def top_k_products_page():

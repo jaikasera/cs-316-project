@@ -4,7 +4,7 @@
 <h2>{{ product.name }}</h2>
 
 {% if product.image_url %}
-  <img src="{{ product.image_url }}" width="250">
+  <img src="{{ product.image_url }}" width="250" class="mb-3">
 {% endif %}
 
 <p><strong>Description:</strong> {{ product.description }}</p>
@@ -17,24 +17,50 @@
 </p>
 
 {% if current_user.is_authenticated and current_user.id == product.creator_id %}
-  <a href="{{ url_for('products.edit_product', product_id=product.id) }}">Edit Product</a>
+  <a class="btn btn-sm btn-outline-primary" href="{{ url_for('products.edit_product', product_id=product.id) }}">Edit Product</a>
 {% endif %}
 
-<h3>Sellers and Stock</h3>
+<h3 class="mt-4">Sellers and Stock</h3>
 <table class='table table-hover table-bordered container'>
   <thead>
     <tr>
       <th>Seller</th>
       <th>Price</th>
       <th>Quantity in Stock</th>
+      <th>Status</th>
+      <th>Add to Cart</th>
     </tr>
   </thead>
   <tbody>
     {% for seller in sellers %}
-    <tr>
-      <td>{{ seller.firstname }} {{ seller.lastname }}</td>
+    <tr {% if seller.is_cheapest %}class="table-success"{% endif %}>
+      <td>
+        {{ seller.firstname }} {{ seller.lastname }}
+        {% if seller.is_cheapest %}
+          <span class="badge bg-success">Cheapest</span>
+        {% endif %}
+      </td>
       <td>${{ seller.price }}</td>
       <td>{{ seller.quantity }}</td>
+      <td>
+        {% if seller.quantity > 0 %}
+          In stock
+        {% else %}
+          <span class="text-danger">Out of stock</span>
+        {% endif %}
+      </td>
+      <td>
+        {% if seller.quantity > 0 %}
+        <form action="{{ url_for('carts.add_to_cart') }}" method="POST" class="d-flex gap-2">
+          <input type="hidden" name="product_id" value="{{ product.id }}">
+          <input type="hidden" name="seller_id" value="{{ seller.seller_id }}">
+          <input type="number" name="quantity" min="1" max="{{ seller.quantity }}" value="1" class="form-control" style="width: 90px;">
+          <input type="submit" value="Add" class="btn btn-sm btn-dark">
+        </form>
+        {% else %}
+          <button class="btn btn-sm btn-secondary" disabled>Unavailable</button>
+        {% endif %}
+      </td>
     </tr>
     {% endfor %}
   </tbody>
@@ -42,13 +68,13 @@
 
 <h3>Reviews</h3>
 {% if reviews %}
-  <ul>
+  <ul class="list-group">
     {% for review in reviews %}
-      <li>
+      <li class="list-group-item">
         <strong>{{ review.rating }}/5</strong>
         by {{ review.firstname }} {{ review.lastname }}<br>
         {{ review.review }}<br>
-        <small>{{ review.created_at }}</small>
+        <small class="text-muted">{{ review.created_at }}</small>
       </li>
     {% endfor %}
   </ul>

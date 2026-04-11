@@ -39,9 +39,17 @@ SELECT
     u.lastname,
     i.quantity,
     i.price,
-    i.updated_at
+    i.updated_at,
+    CASE
+        WHEN i.price = (
+            SELECT MIN(i2.price)
+            FROM Inventory i2
+            WHERE i2.product_id = :product_id AND i2.quantity > 0
+        ) THEN TRUE
+        ELSE FALSE
+    END AS is_cheapest
 FROM Inventory i
 JOIN Users u ON u.id = i.seller_id
-WHERE i.product_id = :product_id AND i.quantity > 0
+WHERE i.product_id = :product_id
 ORDER BY i.price ASC, i.quantity DESC
 ''', product_id=product_id)
