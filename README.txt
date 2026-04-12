@@ -30,6 +30,8 @@ Social Guru: responsible for Feedback / Messaging — Blake Passe
 
 MILESTONE 3 
 
+Link to demo: https://drive.google.com/file/d/1XSaOzB5qoASo1ZXaf36c-HJ-JXw0l6B3/view?usp=sharing 
+
 Products Guru: responsible for Products — Shambhavi Sinha
     * Implemented a backend API endpoint that returns the top k most expensive available products using a SQL query with ORDER BY price DESC and LIMIT k.
     * Added the method Product.get_top_k_expensive(k) in app/models/product.py and the corresponding routes in app/products.py (/products/top/<int:k> for JSON and /products/top?k= for the HTML page).
@@ -61,3 +63,15 @@ Social Guru: Blake Passe
      db/data/SellerReviews.csv            (seller review seed data)
 
 LLMs were used to assist with this assignment
+
+
+
+MILESTONE 4
+
+Products Guru: responsible for Products — Shambhavi Sinha
+    Refactored the Product schema and model to support richer metadata (category, description, image) and moved pricing logic to Inventory.
+    Fixed multiple Flask/model integration bugs (constructor mismatches, missing fields, incorrect query outputs, JSON serialization issues).
+    Debugged and corrected database loading issues (CSV format, foreign key mismatches, sequence alignment, COPY errors).
+    Built and connected product browsing + detail pages, including seller inventory and review display.
+    Unified review handling by extending the Feedback model to support product reviews (instead of a separate ProductReview model).
+    Improved the homepage UI/UX, organizing it into a dashboard with cards, cleaner tables, and consistent labeling.

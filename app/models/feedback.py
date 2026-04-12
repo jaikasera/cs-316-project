@@ -11,8 +11,6 @@ class Feedback:
 
     @staticmethod
     def get_recent_by_uid(user_id):
-        """Return the 5 most recent feedback entries posted by a given user,
-        combining product reviews and seller reviews via UNION ALL."""
         rows = app.db.execute('''
 SELECT 'Product Review' AS feedback_type,
        product_id AS target_id,
@@ -37,3 +35,57 @@ LIMIT 5
 ''',
                               user_id=user_id)
         return [Feedback(*row) for row in rows]
+
+    @staticmethod
+    def get_product_reviews(product_id):
+        return app.db.execute('''
+SELECT
+    pr.id,
+    pr.user_id,
+    pr.product_id,
+    pr.rating,
+    pr.review,
+    pr.created_at,
+    u.firstname,
+    u.lastname
+FROM ProductReviews pr
+JOIN Users u ON u.id = pr.user_id
+WHERE pr.product_id = :product_id
+ORDER BY pr.created_at DESC
+''', product_id=product_id)
+
+    @staticmethod
+    def get_product_average_rating(product_id):
+        rows = app.db.execute('''
+SELECT AVG(rating)
+FROM ProductReviews
+WHERE product_id = :product_id
+''', product_id=product_id)
+        return rows[0][0] if rows and rows[0][0] is not None else None
+
+    @staticmethod
+    def get_product_reviews(product_id):
+        return app.db.execute('''
+SELECT
+    pr.id,
+    pr.user_id,
+    pr.product_id,
+    pr.rating,
+    pr.review,
+    pr.created_at,
+    u.firstname,
+    u.lastname
+FROM ProductReviews pr
+JOIN Users u ON u.id = pr.user_id
+WHERE pr.product_id = :product_id
+ORDER BY pr.created_at DESC
+''', product_id=product_id)
+
+    @staticmethod
+    def get_product_average_rating(product_id):
+        rows = app.db.execute('''
+SELECT AVG(rating)
+FROM ProductReviews
+WHERE product_id = :product_id
+''', product_id=product_id)
+        return rows[0][0] if rows and rows[0][0] is not None else None

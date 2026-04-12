@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>My Products</h2>
+
+{% if products %}
+<table class='table table-hover table-bordered container'>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Category</th>
+      <th>Lowest Price</th>
+      <th>Average Rating</th>
+      <th>Sellers</th>
+      <th>Edit</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for product in products %}
+    <tr>
+      <td>{{ product.id }}</td>
+      <td>{{ product.name }}</td>
+      <td>{{ product.category_name if product.category_name else "Uncategorized" }}</td>
+      <td>
+        {% if product.min_price is not none %}
+          ${{ product.min_price }}
+        {% else %}
+          N/A
+        {% endif %}
+      </td>
+      <td>
+        {% if product.avg_rating is not none %}
+          {{ "%.2f"|format(product.avg_rating|float) }}
+        {% else %}
+          No ratings
+        {% endif %}
+      </td>
+      <td>{{ product.seller_count if product.seller_count is not none else 0 }}</td>
+      <td>
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('products.edit_product', product_id=product.id) }}">
+          Edit
+        </a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+  <p>You have not created any products yet.</p>
+{% endif %}
+
+{% endblock %}
