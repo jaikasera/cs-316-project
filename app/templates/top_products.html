@@ -19,7 +19,8 @@
         <tr>
             <th>ID</th>
             <th>Name</th>
-            <th>Price</th>
+            <th>Highest Seller Price</th>
+            <th>Lowest Seller Price</th>
             <th>Available</th>
         </tr>
     </thead>
@@ -28,7 +29,8 @@
         <tr>
             <td>{{ product.id }}</td>
             <td>{{ product.name }}</td>
-            <td>${{ product.price }}</td>
+            <td>${{ product.top_price }}</td>
+            <td>${{ product.min_price }}</td>
             <td>{{ product.available }}</td>
         </tr>
         {% endfor %}
