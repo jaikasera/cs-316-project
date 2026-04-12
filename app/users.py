@@ -48,6 +48,7 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(),
                                        EqualTo('password')])
+    address = StringField('Address', validators=[DataRequired()])
     submit = SubmitField('Register')
 
     def validate_email(self, email):
@@ -64,7 +65,8 @@ def register():
         if User.register(form.email.data,
                          form.password.data,
                          form.firstname.data,
-                         form.lastname.data):
+                         form.lastname.data,
+                         form.address.data):
             flash('Congratulations, you are now a registered user!')
             return redirect(url_for('users.login'))
     return render_template('register.html', title='Register', form=form)
@@ -93,4 +95,4 @@ def user_purchases():
 
     return render_template('purchases.html', purchases=items, user=user)
 
-    
+
