@@ -74,10 +74,10 @@ TODO LIST (Users Guru)
 MILESTONE 4
 Users Guru — Darren Li
     * added address and balance columns to users relation, modified registration screen and load.sql to support new data, added balance display to main bar
+
 Products Guru: responsible for Products — Shambhavi Sinha
-    Refactored the Product schema and model to support richer metadata (category, description, image) and moved pricing logic to Inventory.
-    Fixed multiple Flask/model integration bugs (constructor mismatches, missing fields, incorrect query outputs, JSON serialization issues).
-    Debugged and corrected database loading issues (CSV format, foreign key mismatches, sequence alignment, COPY errors).
-    Built and connected product browsing + detail pages, including seller inventory and review display.
-    Unified review handling by extending the Feedback model to support product reviews (instead of a separate ProductReview model).
-    Improved the homepage UI/UX, organizing it into a dashboard with cards, cleaner tables, and consistent labeling.
+    * Refactored the Product schema and model to support richer metadata (category, description, image) and moved pricing logic to Inventory.
+    * Built and connected product browsing + detail pages, including seller inventory and review display.
+    * Unified review handling by extending the Feedback model to support product reviews (instead of a separate ProductReview model).
+    * Improved the homepage UI/UX, organizing it into a dashboard with cards, cleaner tables, and consistent labeling.
+    * Added cart implementation in conjuction with Carts Guru

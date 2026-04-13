@@ -27,6 +27,29 @@ JOIN Products p ON p.id = c.product_id
 JOIN Users s ON s.id = c.seller_id
 WHERE c.user_id = :user_id
 ORDER BY c.added_at DESC
-''',
-                              user_id=user_id)
+''', user_id=user_id)
+
         return [CartItem(*row) for row in rows]
+
+    @staticmethod
+    def add_item(user_id, product_id, seller_id, quantity):
+        """
+        Adds item to cart. If already exists, increment quantity.
+        Uses inventory price at time of adding.
+        """
+        app.db.execute('''
+INSERT INTO cart_items (user_id, product_id, seller_id, quantity, unit_price)
+SELECT :user_id, :product_id, :seller_id, :quantity, i.price
+FROM Inventory i
+WHERE i.product_id = :product_id AND i.seller_id = :seller_id
+
+ON CONFLICT (user_id, product_id, seller_id)
+DO UPDATE SET
+    quantity = cart_items.quantity + EXCLUDED.quantity,
+    unit_price = EXCLUDED.unit_price,
+    added_at = CURRENT_TIMESTAMP
+''',
+        user_id=user_id,
+        product_id=product_id,
+        seller_id=seller_id,
+        quantity=quantity)
