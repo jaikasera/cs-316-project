@@ -64,17 +64,16 @@ Social Guru: Blake Passe
 
 LLMs were used to assist with this assignment
 
-TODO LIST
+TODO LIST (Users Guru) 
 
-*display balance associated with account on login
+*display balance associated with account on login (DONE)
 *add to / withdraw from balance
 *public view for user (show account number and name, if seller also show email, address, and reviews)
 *make subpages to align more closely with design
 
-
-
 MILESTONE 4
-
+Users Guru — Darren Li
+    * added address and balance columns to users relation, modified registration screen and load.sql to support new data, added balance display to main bar
 Products Guru: responsible for Products — Shambhavi Sinha
     Refactored the Product schema and model to support richer metadata (category, description, image) and moved pricing logic to Inventory.
     Fixed multiple Flask/model integration bugs (constructor mismatches, missing fields, incorrect query outputs, JSON serialization issues).
