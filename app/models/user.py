@@ -1,11 +1,16 @@
 from flask_login import UserMixin
 from flask import current_app as app
 from werkzeug.security import generate_password_hash, check_password_hash
+from decimal import Decimal, InvalidOperation
+import re
 
 from .. import login
 
 
 class User(UserMixin):
+    MAX_BALANCE = Decimal('999999999999.99')
+    _AMOUNT_PATTERN = re.compile(r'^\d+(?:\.\d{1,2})?$')
+
     def __init__(self, id, email, firstname, lastname, balance):
         self.id = id
         self.email = email
@@ -71,3 +76,49 @@ WHERE id = :id
 """,
                               id=id)
         return User(*(rows[0])) if rows else None
+
+    @staticmethod
+    def _parse_balance_amount(raw_amount):
+        amount_str = (raw_amount or '').strip()
+        if not User._AMOUNT_PATTERN.fullmatch(amount_str):
+            return None
+
+        try:
+            amount = Decimal(amount_str).quantize(Decimal('0.01'))
+        except InvalidOperation:
+            return None
+
+        if amount <= 0:
+            return None
+        return amount
+
+    @staticmethod
+    def update_balance(uid, raw_amount, operation):
+        amount = User._parse_balance_amount(raw_amount)
+        if amount is None:
+            return None, 'Enter a valid amount (integer or up to 2 decimal places).'
+
+        if operation not in {'add', 'withdraw'}:
+            return None, 'Invalid balance operation.'
+
+        delta = amount if operation == 'add' else -amount
+
+        try:
+            rows = app.db.execute("""
+UPDATE Users
+SET balance = balance + :delta
+WHERE id = :uid
+  AND balance + :delta >= 0
+  AND balance + :delta <= :max_balance
+RETURNING id, email, firstname, lastname, balance
+""",
+                                  uid=uid,
+                                  delta=delta,
+                                  max_balance=User.MAX_BALANCE)
+        except Exception:
+            return None, 'Unable to update balance with that amount.'
+
+        if not rows:
+            return None, 'Balance must stay between $0.00 and $999,999,999,999.99.'
+
+        return User(*(rows[0])), None

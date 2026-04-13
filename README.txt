@@ -73,7 +73,9 @@ TODO LIST (Users Guru)
 
 MILESTONE 4
 Users Guru — Darren Li
-    * added address and balance columns to users relation, modified registration screen and load.sql to support new data, added balance display to main bar
+    * added address and balance columns to users relation, added balance display to main bar
+    * modified registration screen and load.sql to support new address field
+    * add page to withdraw/add to balance
 
 Products Guru: responsible for Products — Shambhavi Sinha
     * Refactored the Product schema and model to support richer metadata (category, description, image) and moved pricing logic to Inventory.

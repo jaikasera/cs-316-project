@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, request
 from werkzeug.urls import url_parse
-from flask_login import login_user, logout_user, current_user
+from flask_login import login_user, logout_user, current_user, login_required
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
@@ -76,6 +76,24 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for('index.index'))
+
+
+@bp.route('/balance', methods=['GET', 'POST'])
+@login_required
+def balance():
+    if request.method == 'POST':
+        amount = request.form.get('amount', '')
+        operation = request.form.get('operation', '')
+        updated_user, error = User.update_balance(current_user.id, amount, operation)
+
+        if error:
+            flash(error)
+        else:
+            flash(f'Balance updated successfully. Current balance: ${updated_user.balance:.2f}')
+
+        return redirect(url_for('users.balance'))
+
+    return render_template('balance.html')
 
 
 @bp.route('/user_purchases')
