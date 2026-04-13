@@ -64,6 +64,13 @@ Social Guru: Blake Passe
 
 LLMs were used to assist with this assignment
 
+TODO LIST
+
+*display balance associated with account on login
+*add to / withdraw from balance
+*public view for user (show account number and name, if seller also show email, address, and reviews)
+*make subpages to align more closely with design
+
 
 
 MILESTONE 4
