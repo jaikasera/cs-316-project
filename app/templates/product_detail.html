@@ -124,6 +124,36 @@
     </div>
   </div>
 
+  {% if current_user.is_authenticated %}
+  <div class="card shadow-sm mb-4 border-success">
+    <div class="card-header bg-white">
+      <h4 class="mb-0">Add this product to your inventory</h4>
+    </div>
+    <div class="card-body">
+      <p class="text-muted small mb-3">
+        You will list this product (ID {{ product.id }}) as seller ID {{ current_user.id }}.
+        Re-submitting updates your quantity and price for this listing.
+      </p>
+      <form action="{{ url_for('products.add_inventory') }}" method="POST" class="row g-3 align-items-end">
+        <input type="hidden" name="product_id" value="{{ product.id }}">
+        <div class="col-md-4">
+          <label class="form-label" for="detail_inv_quantity">Quantity in stock</label>
+          <input class="form-control" type="number" name="quantity" id="detail_inv_quantity"
+                 min="0" value="0" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="detail_inv_price">Your price ($)</label>
+          <input class="form-control" type="number" name="price" id="detail_inv_price"
+                 min="0" step="0.01" required>
+        </div>
+        <div class="col-md-4">
+          <button class="btn btn-success w-100" type="submit">Save to my inventory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
   <div class="card shadow-sm">
     <div class="card-header bg-white">
       <h4 class="mb-0">Reviews</h4>

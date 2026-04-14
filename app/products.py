@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import current_user, login_required
 
 from .models.product import Product
@@ -171,3 +171,93 @@ def seller_inventory_page():
 
     products = InventoryItem.get_products_for_seller(seller_id)
     return render_template('seller_inventory.html', products=products, seller_id=seller_id)
+
+
+@bp.route('/inventory/add', methods=['POST'])
+@login_required
+def add_inventory():
+    product_id = request.form.get('product_id', type=int)
+    quantity = request.form.get('quantity', type=int)
+    price_raw = request.form.get('price', type=str)
+    if price_raw is not None and price_raw.strip() != '':
+        try:
+            price = float(price_raw)
+        except ValueError:
+            price = None
+    else:
+        price = None
+
+    if product_id is None:
+        flash('Product ID is required.')
+        return redirect(url_for('index.index'))
+
+    if Product.get(product_id) is None:
+        flash('No product exists with that ID.')
+        return redirect(url_for('index.index'))
+
+    if quantity is None or quantity < 0:
+        flash('Quantity must be a non-negative whole number.')
+        return redirect(url_for('index.index'))
+
+    if price is None or price < 0:
+        flash('Price must be a non-negative number.')
+        return redirect(url_for('index.index'))
+
+    InventoryItem.add_item_to_inventory(
+        seller_id=current_user.id,
+        product_id=product_id,
+        quantity=quantity,
+        price=price,
+    )
+    flash('Product listing saved to your inventory.')
+    return redirect(url_for('products.seller_inventory_page', seller_id=current_user.id))
+
+
+@bp.route('/inventory/my', methods=['GET'])
+@login_required
+def my_inventory_lookup():
+    product_id = request.args.get('product_id', type=int)
+    if product_id is None:
+        flash('Enter a product ID to open your listing.')
+        return redirect(url_for('index.index'))
+    return redirect(url_for('products.my_inventory_detail', product_id=product_id))
+
+
+@bp.route('/inventory/my/<int:product_id>', methods=['GET'])
+@login_required
+def my_inventory_detail(product_id):
+    listing = InventoryItem.get_inventory_item_for_seller(current_user.id, product_id)
+    if listing is None:
+        flash('That product is not in your inventory (or the product no longer exists).')
+        return redirect(url_for('products.seller_inventory_page', seller_id=current_user.id))
+    return render_template('inventory_listing_detail.html', listing=listing)
+
+
+@bp.route('/inventory/my/<int:product_id>/quantity', methods=['POST'])
+@login_required
+def my_inventory_update_quantity(product_id):
+    quantity = request.form.get('quantity', type=int)
+    if quantity is None or quantity < 0:
+        flash('Quantity must be a non-negative whole number.')
+        return redirect(url_for('products.my_inventory_detail', product_id=product_id))
+
+    rows = InventoryItem.update_inventory_item_quantity(
+        current_user.id, product_id, quantity
+    )
+    if rows == 0:
+        flash('Listing not found.')
+        return redirect(url_for('products.seller_inventory_page', seller_id=current_user.id))
+
+    flash('Quantity updated.')
+    return redirect(url_for('products.my_inventory_detail', product_id=product_id))
+
+
+@bp.route('/inventory/my/<int:product_id>/remove', methods=['POST'])
+@login_required
+def my_inventory_remove(product_id):
+    rows = InventoryItem.remove_inventory_item(current_user.id, product_id)
+    if rows == 0:
+        flash('Listing not found.')
+    else:
+        flash('Removed this product from your inventory.')
+    return redirect(url_for('products.seller_inventory_page', seller_id=current_user.id))

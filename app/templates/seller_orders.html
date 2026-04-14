@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-4 mb-5">
+
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0 bg-white px-0">
+      <li class="breadcrumb-item"><a href="{{ url_for('index.index') }}">Dashboard</a></li>
+      <li class="breadcrumb-item active" aria-current="page">My sales orders</li>
+    </ol>
+  </nav>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h2 class="mb-2">Orders (your line items only)</h2>
+      <p class="text-muted mb-3">
+        Newest first. Amounts and unit counts are <strong>your portion</strong> of each order only—other sellers on the same order are not shown.
+        Marking a line fulfilled updates this record only (inventory was already reduced when the buyer checked out).
+      </p>
+      <form action="{{ url_for('seller_orders.seller_orders_page') }}" method="GET" class="row g-3 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label" for="q">Search</label>
+          <input class="form-control" type="text" name="q" id="q"
+                 placeholder="Buyer name, email, or order ID"
+                 value="{{ search_q }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label" for="status">Your fulfillment status</label>
+          <select class="form-control" name="status" id="status">
+            <option value="all" {% if search_status == 'all' %}selected{% endif %}>All</option>
+            <option value="pending" {% if search_status == 'pending' %}selected{% endif %}>Has open line items</option>
+            <option value="complete" {% if search_status == 'complete' %}selected{% endif %}>All your lines fulfilled</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <button type="submit" class="btn btn-primary w-100">Apply</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if summaries and summaries|length > 0 %}
+    {% for summary in summaries %}
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+          <strong>Order #{{ summary.order_id }}</strong>
+          <span class="text-muted ms-2">{{ summary.created_at }}</span>
+        </div>
+        <div>
+          {% if summary.seller_all_fulfilled %}
+            <span class="badge badge-success">Your lines: all fulfilled</span>
+          {% else %}
+            <span class="badge badge-warning text-dark">Your lines: open items</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <h6 class="text-muted mb-2">Buyer</h6>
+            <p class="mb-1">
+              <strong>{{ summary.buyer_firstname }} {{ summary.buyer_lastname }}</strong>
+              (ID {{ summary.buyer_id }})
+            </p>
+            <p class="mb-1 small">{{ summary.buyer_email }}</p>
+            <p class="mb-0 small"><span class="text-muted">Ship to:</span> {{ summary.buyer_address }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6 class="text-muted mb-2">Your portion of this order</h6>
+            <p class="mb-1">
+                           <strong>Subtotal:</strong> ${{ "%.2f"|format(summary.seller_subtotal|float) }}
+            </p>
+            <p class="mb-0">
+              <strong>Total units:</strong> {{ summary.seller_units }}
+            </p>
+          </div>
+        </div>
+
+        <h6 class="mb-2">Your line items</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Unit price</th>
+                <th>Line total</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for line in lines_by_order[summary.order_id] %}
+              <tr>
+                <td>
+                  #{{ line.product_id }} — {{ line.product_name }}
+                </td>
+                <td>{{ line.quantity }}</td>
+                <td>${{ line.unit_price }}</td>
+                <td>${{ "%.2f"|format(line.line_total) }}</td>
+                <td>
+                  {% if line.fulfilled %}
+                    <span class="text-success small">Fulfilled{% if line.fulfilled_at %} ({{ line.fulfilled_at }}){% endif %}</span>
+                  {% else %}
+                    <span class="text-warning small">Pending</span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  {% if not line.fulfilled %}
+                  <form action="{{ url_for('seller_orders.seller_fulfill_line') }}" method="POST" class="d-inline">
+                    <input type="hidden" name="line_id" value="{{ line.id }}">
+                    <input type="hidden" name="q" value="{{ search_q }}">
+                    <input type="hidden" name="status" value="{{ search_status }}">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Mark fulfilled</button>
+                  </form>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="alert alert-secondary" role="alert">
+      No orders match your filters, or you have no sales yet.
+    </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}
