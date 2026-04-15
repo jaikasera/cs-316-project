@@ -22,9 +22,9 @@ Sellers Guru: responsible for Inventory / Order Fulfillment — Evan Bulan
     * Designed inventory management schema to track seller-specific stock levels per product
     * Defined order fulfillment workflow including shipment status updates and tracking metadata
 Social Guru: responsible for Feedback / Messaging — Blake Passe
-    * Designed product_reviews and seller_reviews tables in BCNF with appropriate primary keys, foreign keys, uniqueness constraints, and rating checks
-    * Defined eligibility logic with joins and specified summary rating computation (average and count) for products and sellers
-    * Worked on  “My Reviews” functionality integration with reverse chronological sorting and edit/delete support
+    * Designed product_reviews and seller_reviews tables in BCNF with primary keys, foreign keys, uniqueness constraints, and rating checks
+    * Defined eligibility and summary ratings (average and count) for products and sellers using joins
+    * Planned “My Reviews” with reverse chronological sorting and edit/delete support
 
 
 
@@ -46,21 +46,9 @@ Sellers Guru: Evan Bulan
    * Implemented backend API endpoint that will return a list of all products of a given seller ID, only retrieving product ID and name for now (though selecting all columns in the SQL query that will be useful for seller dashboard later on)
    * Modeled execution and displayed results of this endpoint on te Flask frontend in similar style to previously created displays, where a user ID can be input and then the product IDs and names are returned
 Social Guru: Blake Passe
-   * Added ProductReviews and SellerReviews tables to db/create.sql with appropriate columns (user_id, product_id/seller_id, rating 1-5, review text, created_at timestamp) and uniqueness constraints
-   * Added seed data CSVs (db/data/ProductReviews.csv, db/data/SellerReviews.csv) and corresponding \COPY statements in db/load.sql
-   * Implemented Feedback.get_recent_by_uid(user_id) in app/models/feedback.py using a parameterized UNION ALL SQL query across both feedback tables, ordered by created_at DESC with LIMIT 5
-   * Created backend route GET /social/feedback?user_id=<id> in app/social.py that validates the user exists and returns the 5 most recent feedback posts
-   * Created app/templates/social_feedback.html with a User ID input form and results table showing feedback type, target ID, star rating, review text, and date
-   * Registered the social blueprint in app/__init__.py
-
-   Implementation file locations:
-     app/social.py                        (backend route)
-     app/models/feedback.py              (SQL query / model)
-     app/templates/social_feedback.html  (frontend template)
-     db/create.sql                        (ProductReviews + SellerReviews table definitions)
-     db/load.sql                          (seed data loading)
-     db/data/ProductReviews.csv           (product review seed data)
-     db/data/SellerReviews.csv            (seller review seed data)
+   * Added ProductReviews and SellerReviews to db/create.sql with seed CSVs and \COPY in db/load.sql
+   * Implemented Feedback.get_recent_by_uid(user_id) in app/models/feedback.py (UNION ALL across both tables, newest first, LIMIT 5)
+   * Added GET /social/feedback?user_id=<id>, social_feedback.html (form + table), and registered the social blueprint in app/__init__.py
 
 LLMs were used to assist with this assignment
 
@@ -83,24 +71,7 @@ Products Guru: responsible for Products — Shambhavi Sinha
     * Added cart implementation in conjuction with Carts Guru
 
 Social Guru: responsible for Feedback / Messaging — Blake Passe
-    * Added Milestone 4 pagination support for large review datasets:
-        * Product detail review list now supports page/per-page controls and sorting (newest, oldest, highest rating, lowest rating).
-        * Added paginated endpoint/page for all feedback authored by a user:
-          /social/feedback/all?user_id=<id>&page=<n>&per_page=<m>.
-    * Added performance indexes for large review tables:
-        * ProductReviews(product_id, created_at), ProductReviews(user_id, created_at),
-          SellerReviews(seller_id, created_at), SellerReviews(user_id, created_at).
-    * Expanded generated seed-data scale in db/generated/gen.py:
-        * users=300, products=2000, product_reviews=12000, seller_reviews=6000.
-    * Generated database usage for M4 demo/testing:
-        * python db/generated/gen.py
-        * ./db/setup.sh generated
-
-Implementation file locations for Social M4:
-    app/models/feedback.py
-    app/social.py
-    app/templates/social_feedback.html
-    app/templates/social_feedback_all.html
-    app/templates/product_detail.html
-    db/create.sql
-    db/generated/gen.py
+    * Added product detail review pagination with sort (newest, oldest, highest, lowest) and per-page controls
+    * Added GET /social/feedback/all?user_id=<id>&page=<n>&per_page=<m> for paginated user-authored feedback
+    * Added indexes on ProductReviews and SellerReviews for query patterns at scale (product/seller/user with created_at)
+    * Increased generated seed scale in db/generated/gen.py (e.g. 300 users, 2000 products, 12k product reviews, 6k seller reviews); optional gen.py then ./db/setup.sh generated for large DB testing
