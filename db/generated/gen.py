@@ -1,6 +1,7 @@
 from werkzeug.security import generate_password_hash
 import csv
 import random
+from datetime import timedelta
 from pathlib import Path
 from faker import Faker
 
@@ -13,6 +14,7 @@ num_purchases = 2500
 num_product_reviews = 3000
 num_seller_reviews = 1500
 num_cart_items = 1200
+num_orders = 1800
 
 Faker.seed(0)
 random.seed(0)
@@ -246,6 +248,97 @@ def gen_cart_items(num_cart_items, seller_product_pairs, num_users):
         print(f'{item_count} generated')
 
 
+def gen_order_items(num_orders, seller_product_pairs, num_users):
+    """
+    Generate order_items rows and return computed order summaries for gen_orders.
+    Each summary tuple is:
+      (order_id, user_id, total_amount, num_items, created_at, fulfilled)
+    """
+    order_summaries = []
+    item_id = 1
+
+    with open(BASE / 'OrderItems.csv', 'w') as f:
+        writer = get_csv_writer(f)
+        print('OrderItems...', end=' ', flush=True)
+
+        for order_id in range(1, num_orders + 1):
+            if order_id % 100 == 0:
+                print(f'o{order_id}', end=' ', flush=True)
+
+            user_id = random.randint(0, num_users - 1)
+            created_at = fake.date_time_this_decade()
+
+            max_unique_items = min(6, len(seller_product_pairs))
+            line_count = random.randint(1, max_unique_items)
+            chosen_pairs = random.sample(seller_product_pairs, k=line_count)
+
+            total_amount = 0.0
+            total_quantity = 0
+            all_fulfilled = True
+
+            for seller_id, product_id in chosen_pairs:
+                quantity = random.randint(1, 5)
+                unit_price = random.randint(200, 100000) / 100
+
+                # Older orders are more likely to be fulfilled.
+                age_days = (fake.date_time_this_year() - created_at).days
+                fulfilled_prob = 0.85 if age_days > 30 else 0.35
+                fulfilled = random.random() < fulfilled_prob
+
+                if fulfilled:
+                    fulfillment_delay = timedelta(
+                        hours=random.randint(1, 96),
+                        minutes=random.randint(0, 59),
+                        seconds=random.randint(0, 59),
+                    )
+                    fulfilled_at = created_at + fulfillment_delay
+                    fulfilled_at_value = fulfilled_at
+                else:
+                    fulfilled_at_value = ''
+                    all_fulfilled = False
+
+                total_amount += quantity * unit_price
+                total_quantity += quantity
+
+                writer.writerow([
+                    item_id,
+                    order_id,
+                    product_id,
+                    seller_id,
+                    quantity,
+                    f'{unit_price:.2f}',
+                    str(fulfilled).lower(),
+                    fulfilled_at_value,
+                ])
+                item_id += 1
+
+            order_summaries.append((
+                order_id,
+                user_id,
+                f'{total_amount:.2f}',
+                total_quantity,
+                created_at,
+                str(all_fulfilled).lower(),
+            ))
+
+        print(f'{item_id - 1} generated')
+
+    return order_summaries
+
+
+def gen_orders(order_summaries):
+    with open(BASE / 'Orders.csv', 'w') as f:
+        writer = get_csv_writer(f)
+        print('Orders...', end=' ', flush=True)
+
+        for i, summary in enumerate(order_summaries, start=1):
+            if i % 100 == 0:
+                print(f'{i}', end=' ', flush=True)
+            writer.writerow(summary)
+
+        print(f'{len(order_summaries)} generated')
+
+
 if __name__ == '__main__':
     gen_users(num_users)
     gen_categories()
@@ -255,3 +348,5 @@ if __name__ == '__main__':
     gen_product_reviews(num_product_reviews, available_pids, num_users)
     gen_seller_reviews(num_seller_reviews, seller_product_pairs, num_users)
     gen_cart_items(num_cart_items, seller_product_pairs, num_users)
+    order_summaries = gen_order_items(num_orders, seller_product_pairs, num_users)
+    gen_orders(order_summaries)
