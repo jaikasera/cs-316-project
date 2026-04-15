@@ -66,14 +66,14 @@ LLMs were used to assist with this assignment
 
 TODO LIST (Users Guru) 
 
-*display balance associated with account on login (DONE)
-*add to / withdraw from balance
 *public view for user (show account number and name, if seller also show email, address, and reviews)
 *make subpages to align more closely with design
 
 MILESTONE 4
 Users Guru — Darren Li
-    * added address and balance columns to users relation, modified registration screen and load.sql to support new data, added balance display to main bar
+    * added address and balance columns to users relation, added balance display to main bar
+    * modified registration screen and load.sql to support new address field
+    * add page to withdraw/add to balance
 
 Products Guru: responsible for Products — Shambhavi Sinha
     * Refactored the Product schema and model to support richer metadata (category, description, image) and moved pricing logic to Inventory.
