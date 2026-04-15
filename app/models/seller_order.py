@@ -47,7 +47,13 @@ class SellerOrder:
     """Orders as seen by one seller (only their order_items; no other sellers' lines)."""
 
     @staticmethod
-    def list_orders_for_seller(seller_id: int, keyword: str = '', status: str = 'all'):
+    def list_orders_for_seller(
+        seller_id: int,
+        keyword: str = '',
+        status: str = 'all',
+        page: int = 1,
+        per_page: int = 10,
+    ):
         if status not in ('all', 'pending', 'complete'):
             status = 'all'
 
@@ -63,6 +69,28 @@ class SellerOrder:
         else:
             having = ''
 
+        count_rows = app.db.execute(f'''
+WITH grouped AS (
+    SELECT o.id
+    FROM orders o
+    JOIN order_items oi ON oi.order_id = o.id AND oi.seller_id = :seller_id
+    JOIN Users u ON u.id = o.user_id
+    WHERE (
+        :kw IS NULL
+        OR u.firstname ILIKE :kw
+        OR u.lastname ILIKE :kw
+        OR u.email ILIKE :kw
+        OR (:order_id_match IS NOT NULL AND o.id = :order_id_match)
+    )
+    GROUP BY o.id
+    {having}
+)
+SELECT COUNT(*)
+FROM grouped
+''', seller_id=seller_id, kw=kw, order_id_match=order_id_match)
+        total_count = count_rows[0][0] if count_rows else 0
+
+        offset = (page - 1) * per_page
         rows = app.db.execute(f'''
 SELECT
     o.id,
@@ -88,15 +116,18 @@ WHERE (
 GROUP BY o.id, o.created_at, o.user_id, u.firstname, u.lastname, u.email, u.address
 {having}
 ORDER BY o.created_at DESC
-''', seller_id=seller_id, kw=kw, order_id_match=order_id_match)
+LIMIT :per_page
+OFFSET :offset
+''', seller_id=seller_id, kw=kw, order_id_match=order_id_match, per_page=per_page, offset=offset)
 
-        return [
+        summaries = [
             SellerOrderSummary(
                 row[0], row[1], row[2], row[3], row[4], row[5], row[6],
                 row[7], row[8], row[9],
             )
             for row in rows
         ]
+        return summaries, total_count
 
     @staticmethod
     def lines_for_orders(seller_id: int, order_ids: list):

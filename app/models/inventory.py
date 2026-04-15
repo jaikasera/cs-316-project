@@ -12,7 +12,8 @@ class InventoryItem:
         self.inventory_price = inventory_price
 
     @staticmethod
-    def get_products_for_seller(seller_id: int):
+    def get_products_for_seller(seller_id: int, page: int = 1, per_page: int = 25):
+        offset = (page - 1) * per_page
         rows = app.db.execute('''
 SELECT
     p.id,
@@ -26,9 +27,20 @@ FROM Inventory i
 JOIN Products p ON p.id = i.product_id
 WHERE i.seller_id = :seller_id
 ORDER BY i.price DESC, p.id ASC
-''', seller_id=seller_id)
+LIMIT :per_page
+OFFSET :offset
+''', seller_id=seller_id, per_page=per_page, offset=offset)
 
         return [InventoryItem(*row) for row in rows]
+
+    @staticmethod
+    def get_product_count_for_seller(seller_id: int):
+        rows = app.db.execute('''
+SELECT COUNT(*)
+FROM Inventory i
+WHERE i.seller_id = :seller_id
+''', seller_id=seller_id)
+        return rows[0][0] if rows else 0
 
     @staticmethod
     def add_item_to_inventory(seller_id: int, product_id: int, quantity: int, price: float):

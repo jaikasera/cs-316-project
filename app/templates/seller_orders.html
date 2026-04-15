@@ -33,10 +33,22 @@
             <option value="complete" {% if search_status == 'complete' %}selected{% endif %}>All your lines fulfilled</option>
           </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
+          <label class="form-label" for="per_page">Per page</label>
+          <select class="form-control" name="per_page" id="per_page">
+            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+            <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+          </select>
+        </div>
+        <div class="col-md-1">
           <button type="submit" class="btn btn-primary w-100">Apply</button>
         </div>
       </form>
+      <p class="text-muted mt-3 mb-0">
+        Showing {{ summaries|length }} of {{ total_count }} matching orders
+        (page {{ page }} of {{ total_pages }}).
+      </p>
     </div>
   </div>
 
@@ -113,6 +125,8 @@
                     <input type="hidden" name="line_id" value="{{ line.id }}">
                     <input type="hidden" name="q" value="{{ search_q }}">
                     <input type="hidden" name="status" value="{{ search_status }}">
+                    <input type="hidden" name="page" value="{{ page }}">
+                    <input type="hidden" name="per_page" value="{{ per_page }}">
                     <button type="submit" class="btn btn-sm btn-outline-success">Mark fulfilled</button>
                   </form>
                   {% endif %}
@@ -129,6 +143,24 @@
     <div class="alert alert-secondary" role="alert">
       No orders match your filters, or you have no sales yet.
     </div>
+  {% endif %}
+
+  {% if total_pages > 1 %}
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <div>
+      {% if page > 1 %}
+        <a class="btn btn-outline-primary btn-sm"
+           href="{{ url_for('seller_orders.seller_orders_page', q=search_q, status=search_status, page=page-1, per_page=per_page) }}">Previous</a>
+      {% endif %}
+    </div>
+    <div class="text-muted small">Page {{ page }} of {{ total_pages }}</div>
+    <div>
+      {% if page < total_pages %}
+        <a class="btn btn-outline-primary btn-sm"
+           href="{{ url_for('seller_orders.seller_orders_page', q=search_q, status=search_status, page=page+1, per_page=per_page) }}">Next</a>
+      {% endif %}
+    </div>
+  </div>
   {% endif %}
 
 </div>

@@ -7,7 +7,7 @@
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb mb-0 bg-white px-0">
       <li class="breadcrumb-item">
-        <a href="{{ url_for('products.seller_inventory_page', seller_id=current_user.id) }}">My inventory</a>
+        <a href="{{ url_for('products.seller_inventory_page', seller_id=current_user.id, page=page, per_page=per_page) }}">My inventory</a>
       </li>
       <li class="breadcrumb-item active" aria-current="page">Product #{{ listing.product_id }}</li>
     </ol>
@@ -78,6 +78,8 @@
       <h5 class="mb-3">Change quantity</h5>
       <form action="{{ url_for('products.my_inventory_update_quantity', product_id=listing.product_id) }}"
             method="POST" class="form-inline mb-4">
+        <input type="hidden" name="page" value="{{ page }}">
+        <input type="hidden" name="per_page" value="{{ per_page }}">
         <div class="form-group mr-sm-2 mb-2 mb-sm-0">
           <label class="sr-only" for="qty_new">New quantity</label>
           <input class="form-control" type="number" name="quantity" id="qty_new"
@@ -90,6 +92,8 @@
       <form action="{{ url_for('products.my_inventory_remove', product_id=listing.product_id) }}"
             method="POST"
             onsubmit="return confirm('Remove this product from your inventory? This cannot be undone.');">
+        <input type="hidden" name="page" value="{{ page }}">
+        <input type="hidden" name="per_page" value="{{ per_page }}">
         <button type="submit" class="btn btn-outline-danger">Remove listing</button>
       </form>
     </div>

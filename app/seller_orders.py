@@ -8,6 +8,13 @@ from .models.seller_order import SellerOrder
 bp = Blueprint('seller_orders', __name__)
 
 
+def _normalize_page_and_size(page_raw, per_page_raw, default_per_page=10):
+    page = page_raw if isinstance(page_raw, int) and page_raw > 0 else 1
+    allowed = [10, 25, 50]
+    per_page = per_page_raw if per_page_raw in allowed else default_per_page
+    return page, per_page
+
+
 @bp.route('/seller/orders')
 @login_required
 def seller_orders_page():
@@ -15,10 +22,20 @@ def seller_orders_page():
     status = request.args.get('status', default='all', type=str)
     if status not in ('all', 'pending', 'complete'):
         status = 'all'
+    page_raw = request.args.get('page', default=1, type=int)
+    per_page_raw = request.args.get('per_page', default=10, type=int)
+    page, per_page = _normalize_page_and_size(page_raw, per_page_raw)
 
-    summaries = SellerOrder.list_orders_for_seller(
-        current_user.id, keyword=keyword, status=status
+    summaries, total_count = SellerOrder.list_orders_for_seller(
+        current_user.id, keyword=keyword, status=status, page=page, per_page=per_page
     )
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+        summaries, total_count = SellerOrder.list_orders_for_seller(
+            current_user.id, keyword=keyword, status=status, page=page, per_page=per_page
+        )
+
     order_ids = [s.order_id for s in summaries]
     lines = SellerOrder.lines_for_orders(current_user.id, order_ids)
     lines_by_order = defaultdict(list)
@@ -31,6 +48,10 @@ def seller_orders_page():
         lines_by_order=lines_by_order,
         search_q=keyword,
         search_status=status,
+        page=page,
+        per_page=per_page,
+        total_count=total_count,
+        total_pages=total_pages,
     )
 
 
@@ -42,12 +63,17 @@ def seller_fulfill_line():
     status = request.form.get('status', default='all', type=str)
     if status not in ('all', 'pending', 'complete'):
         status = 'all'
+    page_raw = request.form.get('page', type=int)
+    per_page_raw = request.form.get('per_page', type=int)
+    page, per_page = _normalize_page_and_size(page_raw, per_page_raw)
 
     redirect_args = {}
     if q:
         redirect_args['q'] = q
     if status != 'all':
         redirect_args['status'] = status
+    redirect_args['page'] = page
+    redirect_args['per_page'] = per_page
 
     if line_id is None:
         flash('Invalid line item.')
