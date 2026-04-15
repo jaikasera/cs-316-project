@@ -50,7 +50,10 @@ def gen_users(num_users):
             name_components = profile['name'].split(' ')
             firstname = name_components[0]
             lastname = name_components[-1]
-            writer.writerow([uid, email, password, firstname, lastname])
+            balance = f"{random.randint(0, 50000) / 100:.2f}"
+            # Keep addresses single-line for predictable CSV ingestion.
+            address = fake.address().replace('\n', ', ')
+            writer.writerow([uid, email, password, firstname, lastname, balance, address])
         print(f'{num_users} generated')
 
 
@@ -258,7 +261,9 @@ def gen_order_items(num_orders, seller_product_pairs, num_users):
     item_id = 1
 
     with open(BASE / 'OrderItems.csv', 'w') as f:
-        writer = get_csv_writer(f)
+        # Use non-quoting-for-empty behavior so blank fulfilled_at loads as SQL NULL
+        # under \COPY ... NULL '' CSV.
+        writer = csv.writer(f, dialect='excel', lineterminator='\n')
         print('OrderItems...', end=' ', flush=True)
 
         for order_id in range(1, num_orders + 1):
