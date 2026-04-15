@@ -15,6 +15,8 @@
       {% if current_user.is_authenticated %}
         <a class="btn btn-success" href="{{ url_for('products.create_product') }}">Create New Product</a>
         <a class="btn btn-outline-dark" href="{{ url_for('products.my_products') }}">My Products</a>
+        <a class="btn btn-outline-dark" href="{{ url_for('products.seller_inventory_page', seller_id=current_user.id) }}">My Inventory</a>
+        <a class="btn btn-outline-primary" href="{{ url_for('seller_orders.seller_orders_page') }}">My sales orders</a>
       {% endif %}
     </div>
   </div>
@@ -120,6 +122,46 @@
       </div>
     </div>
   </div>
+
+  {% if current_user.is_authenticated %}
+  <div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-4">
+      <div class="card h-100 shadow-sm border-success">
+        <div class="card-body">
+          <h5 class="card-title">Add Product to Inventory</h5>
+          <p class="card-text text-muted">
+            List an existing catalog product in <strong>your</strong> inventory with a price and stock quantity.
+            If you already sell this product, your quantity and price are updated.
+          </p>
+          <form action="{{ url_for('products.add_inventory') }}" method="POST">
+            <label class="form-label" for="inv_product_id">Product ID</label>
+            <input class="form-control mb-2" type="number" name="product_id" id="inv_product_id" min="1" required>
+            <label class="form-label" for="inv_quantity">Quantity in stock</label>
+            <input class="form-control mb-2" type="number" name="quantity" id="inv_quantity" min="0" value="0" required>
+            <label class="form-label" for="inv_price">Your price ($)</label>
+            <input class="form-control mb-2" type="number" name="price" id="inv_price" min="0" step="0.01" required>
+            <button class="btn btn-success w-100" type="submit">Save to my inventory</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="card h-100 shadow-sm border-primary">
+        <div class="card-body">
+          <h5 class="card-title">My inventory listing</h5>
+          <p class="card-text text-muted">
+            Open a product you already sell: see catalog details, your stock and price, change quantity, or remove the listing.
+          </p>
+          <form action="{{ url_for('products.my_inventory_lookup') }}" method="GET">
+            <label class="form-label" for="manage_inv_product_id">Product ID</label>
+            <input class="form-control mb-2" type="number" name="product_id" id="manage_inv_product_id" min="1" required>
+            <button class="btn btn-primary w-100" type="submit">Open my listing</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <div class="card shadow-sm mb-4">
     <div class="card-header bg-white">

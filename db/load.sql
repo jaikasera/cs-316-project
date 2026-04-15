@@ -39,3 +39,15 @@ SELECT pg_catalog.setval('public.sellerreviews_id_seq',
 
 -- CART ITEMS
 \COPY cart_items(user_id, product_id, seller_id, quantity, unit_price) FROM 'CartItems.csv' WITH DELIMITER ',' NULL '' CSV;
+
+-- ORDERS
+\COPY orders(id, user_id, total_amount, num_items, created_at, fulfilled) FROM 'Orders.csv' WITH DELIMITER ',' NULL '' CSV;
+SELECT pg_catalog.setval('public.orders_id_seq',
+                         (SELECT MAX(id)+1 FROM orders),
+                         false);
+
+-- ORDER ITEMS
+\COPY order_items(id, order_id, product_id, seller_id, quantity, unit_price, fulfilled, fulfilled_at) FROM 'OrderItems.csv' WITH DELIMITER ',' NULL '' CSV;
+SELECT pg_catalog.setval('public.order_items_id_seq',
+                         (SELECT MAX(id)+1 FROM order_items),
+                         false);
