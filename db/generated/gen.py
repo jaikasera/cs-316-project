@@ -7,12 +7,12 @@ from faker import Faker
 
 BASE = Path(__file__).resolve().parent
 
-num_users = 100
+num_users = 300
 num_categories = 8
 num_products = 2000
 num_purchases = 2500
-num_product_reviews = 3000
-num_seller_reviews = 1500
+num_product_reviews = 12000
+num_seller_reviews = 6000
 num_cart_items = 1200
 num_orders = 1800
 

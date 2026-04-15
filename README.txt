@@ -81,3 +81,26 @@ Products Guru: responsible for Products — Shambhavi Sinha
     * Unified review handling by extending the Feedback model to support product reviews (instead of a separate ProductReview model).
     * Improved the homepage UI/UX, organizing it into a dashboard with cards, cleaner tables, and consistent labeling.
     * Added cart implementation in conjuction with Carts Guru
+
+Social Guru: responsible for Feedback / Messaging — Blake Passe
+    * Added Milestone 4 pagination support for large review datasets:
+        * Product detail review list now supports page/per-page controls and sorting (newest, oldest, highest rating, lowest rating).
+        * Added paginated endpoint/page for all feedback authored by a user:
+          /social/feedback/all?user_id=<id>&page=<n>&per_page=<m>.
+    * Added performance indexes for large review tables:
+        * ProductReviews(product_id, created_at), ProductReviews(user_id, created_at),
+          SellerReviews(seller_id, created_at), SellerReviews(user_id, created_at).
+    * Expanded generated seed-data scale in db/generated/gen.py:
+        * users=300, products=2000, product_reviews=12000, seller_reviews=6000.
+    * Generated database usage for M4 demo/testing:
+        * python db/generated/gen.py
+        * ./db/setup.sh generated
+
+Implementation file locations for Social M4:
+    app/models/feedback.py
+    app/social.py
+    app/templates/social_feedback.html
+    app/templates/social_feedback_all.html
+    app/templates/product_detail.html
+    db/create.sql
+    db/generated/gen.py

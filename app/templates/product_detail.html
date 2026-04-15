@@ -40,6 +40,7 @@
               <span class="badge bg-warning text-dark fs-6 ms-2">
                 ★ {{ "%.2f"|format(avg_rating|float) }}
               </span>
+              <span class="text-muted ms-2">from {{ total_reviews }} reviews</span>
             {% else %}
               <span class="badge bg-secondary fs-6 ms-2">No ratings yet</span>
             {% endif %}
@@ -156,9 +157,37 @@
 
   <div class="card shadow-sm">
     <div class="card-header bg-white">
-      <h4 class="mb-0">Reviews</h4>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h4 class="mb-0">Reviews</h4>
+        <span class="text-muted small">{{ total_reviews }} total reviews</span>
+      </div>
     </div>
     <div class="card-body">
+      <form method="GET" action="{{ url_for('products.product_detail', product_id=product.id) }}" class="row g-2 mb-3">
+        <div class="col-md-4">
+          <label class="form-label mb-1" for="review_sort">Sort by</label>
+          <select class="form-control form-control-sm" id="review_sort" name="review_sort">
+            <option value="date_desc" {% if review_sort == 'date_desc' %}selected{% endif %}>Newest first</option>
+            <option value="date_asc" {% if review_sort == 'date_asc' %}selected{% endif %}>Oldest first</option>
+            <option value="rating_desc" {% if review_sort == 'rating_desc' %}selected{% endif %}>Highest rating</option>
+            <option value="rating_asc" {% if review_sort == 'rating_asc' %}selected{% endif %}>Lowest rating</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label mb-1" for="review_per_page">Rows per page</label>
+          <select class="form-control form-control-sm" id="review_per_page" name="review_per_page">
+            <option value="10" {% if review_per_page == 10 %}selected{% endif %}>10</option>
+            <option value="25" {% if review_per_page == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if review_per_page == 50 %}selected{% endif %}>50</option>
+            <option value="100" {% if review_per_page == 100 %}selected{% endif %}>100</option>
+          </select>
+        </div>
+        <input type="hidden" name="review_page" value="1">
+        <div class="col-md-2 d-flex align-items-end">
+          <button class="btn btn-outline-secondary btn-sm w-100" type="submit">Apply</button>
+        </div>
+      </form>
+
       {% if reviews %}
         <div class="list-group list-group-flush">
           {% for review in reviews %}
@@ -176,6 +205,24 @@
         </div>
       {% else %}
         <p class="text-muted mb-0">No reviews yet.</p>
+      {% endif %}
+
+      {% if review_total_pages > 1 %}
+      <div class="d-flex justify-content-between align-items-center mt-3">
+        <div>
+          {% if review_page > 1 %}
+            <a class="btn btn-outline-primary btn-sm"
+               href="{{ url_for('products.product_detail', product_id=product.id, review_page=review_page-1, review_per_page=review_per_page, review_sort=review_sort) }}">Previous</a>
+          {% endif %}
+        </div>
+        <div class="text-muted small">Page {{ review_page }} of {{ review_total_pages }}</div>
+        <div>
+          {% if review_page < review_total_pages %}
+            <a class="btn btn-outline-primary btn-sm"
+               href="{{ url_for('products.product_detail', product_id=product.id, review_page=review_page+1, review_per_page=review_per_page, review_sort=review_sort) }}">Next</a>
+          {% endif %}
+        </div>
+      </div>
       {% endif %}
     </div>
   </div>
