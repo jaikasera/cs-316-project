@@ -76,4 +76,4 @@ Social Guru: responsible for Feedback / Messaging — Blake Passe
     * Added product detail review pagination with sort (newest, oldest, highest, lowest) and per-page controls
     * Added GET /social/feedback/all?user_id=<id>&page=<n>&per_page=<m> for paginated user-authored feedback
     * Added indexes on ProductReviews and SellerReviews for query patterns at scale (product/seller/user with created_at)
-    * Increased generated seed scale in db/generated/gen.py (e.g. 300 users, 2000 products, 12k product reviews, 6k seller reviews); optional gen.py then ./db/setup.sh generated for large DB testing
+    * Increased generated seed scale in db/generated/gen.py (e.g. 300 users, 2000 products, 12k product reviews, 6k seller reviews)
