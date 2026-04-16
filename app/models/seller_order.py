@@ -153,9 +153,31 @@ ORDER BY oi.order_id DESC, oi.id ASC
 
     @staticmethod
     def fulfill_line_item(line_id: int, seller_id: int):
-        """Mark one line fulfilled. Does not change Inventory (stock was adjusted at checkout)."""
-        return app.db.execute('''
+        """Mark one line fulfilled, then auto-mark the order fulfilled if all lines are done."""
+        from sqlalchemy import text
+
+        with app.db.engine.begin() as conn:
+            result = conn.execute(text('''
 UPDATE order_items
 SET fulfilled = TRUE, fulfilled_at = CURRENT_TIMESTAMP
 WHERE id = :line_id AND seller_id = :seller_id AND fulfilled = FALSE
-''', line_id=line_id, seller_id=seller_id)
+RETURNING order_id
+'''), {'line_id': line_id, 'seller_id': seller_id})
+
+            row = result.fetchone()
+            if row is None:
+                return 0
+
+            order_id = row[0]
+
+            unfulfilled = conn.execute(text('''
+SELECT COUNT(*) FROM order_items
+WHERE order_id = :oid AND fulfilled = FALSE
+'''), {'oid': order_id}).fetchone()
+
+            if unfulfilled[0] == 0:
+                conn.execute(text('''
+UPDATE orders SET fulfilled = TRUE WHERE id = :oid
+'''), {'oid': order_id})
+
+            return 1

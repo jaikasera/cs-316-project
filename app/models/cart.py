@@ -53,3 +53,117 @@ DO UPDATE SET
         product_id=product_id,
         seller_id=seller_id,
         quantity=quantity)
+
+    @staticmethod
+    def update_quantity(user_id, product_id, seller_id, quantity):
+        app.db.execute('''
+UPDATE cart_items
+SET quantity = :quantity, added_at = CURRENT_TIMESTAMP
+WHERE user_id = :user_id AND product_id = :product_id AND seller_id = :seller_id
+''', user_id=user_id, product_id=product_id, seller_id=seller_id, quantity=quantity)
+
+    @staticmethod
+    def remove_item(user_id, product_id, seller_id):
+        app.db.execute('''
+DELETE FROM cart_items
+WHERE user_id = :user_id AND product_id = :product_id AND seller_id = :seller_id
+''', user_id=user_id, product_id=product_id, seller_id=seller_id)
+
+    @staticmethod
+    def checkout(user_id):
+        """
+        Submit the entire cart as one order in a single SERIALIZABLE transaction.
+        Returns (order_id, None) on success or (None, error_message) on failure.
+        """
+        from sqlalchemy import text
+
+        try:
+            with app.db.engine.begin() as conn:
+                # 1. Get cart items with row locks
+                rows = conn.execute(text('''
+SELECT c.product_id, c.seller_id, c.quantity, c.unit_price
+FROM cart_items c
+WHERE c.user_id = :user_id
+FOR UPDATE
+'''), {'user_id': user_id}).fetchall()
+
+                if not rows:
+                    return None, 'Your cart is empty.'
+
+                cart = [{'product_id': r[0], 'seller_id': r[1],
+                         'quantity': r[2], 'unit_price': float(r[3])} for r in rows]
+
+                total_amount = sum(item['unit_price'] * item['quantity'] for item in cart)
+                num_items = sum(item['quantity'] for item in cart)
+
+                # 2. Check inventory for every line
+                for item in cart:
+                    inv = conn.execute(text('''
+SELECT quantity FROM Inventory
+WHERE seller_id = :sid AND product_id = :pid
+FOR UPDATE
+'''), {'sid': item['seller_id'], 'pid': item['product_id']}).fetchone()
+
+                    if inv is None or inv[0] < item['quantity']:
+                        raise ValueError(
+                            f"Insufficient inventory for product {item['product_id']} "
+                            f"from seller {item['seller_id']}.")
+
+                # 3. Check buyer balance
+                buyer = conn.execute(text('''
+SELECT balance FROM Users WHERE id = :uid FOR UPDATE
+'''), {'uid': user_id}).fetchone()
+
+                if buyer is None or float(buyer[0]) < total_amount:
+                    raise ValueError('Insufficient balance to complete this order.')
+
+                # 4. Create order
+                order_row = conn.execute(text('''
+INSERT INTO orders (user_id, total_amount, num_items)
+VALUES (:uid, :total, :num)
+RETURNING id
+'''), {'uid': user_id, 'total': round(total_amount, 2), 'num': num_items}).fetchone()
+                order_id = order_row[0]
+
+                # 5. Insert order_items, 6. Decrement inventory, aggregate seller credits
+                seller_credits = {}
+                for item in cart:
+                    conn.execute(text('''
+INSERT INTO order_items (order_id, product_id, seller_id, quantity, unit_price)
+VALUES (:oid, :pid, :sid, :qty, :price)
+'''), {'oid': order_id, 'pid': item['product_id'],
+       'sid': item['seller_id'], 'qty': item['quantity'],
+       'price': item['unit_price']})
+
+                    conn.execute(text('''
+UPDATE Inventory
+SET quantity = quantity - :qty, updated_at = CURRENT_TIMESTAMP
+WHERE seller_id = :sid AND product_id = :pid
+'''), {'qty': item['quantity'], 'sid': item['seller_id'],
+       'pid': item['product_id']})
+
+                    line_total = item['unit_price'] * item['quantity']
+                    seller_credits[item['seller_id']] = seller_credits.get(item['seller_id'], 0) + line_total
+
+                # 7. Debit buyer
+                conn.execute(text('''
+UPDATE Users SET balance = balance - :amount WHERE id = :uid
+'''), {'amount': round(total_amount, 2), 'uid': user_id})
+
+                # 8. Credit each seller
+                for sid, credit in seller_credits.items():
+                    conn.execute(text('''
+UPDATE Users SET balance = balance + :amount WHERE id = :sid
+'''), {'amount': round(credit, 2), 'sid': sid})
+
+                # 9. Clear cart
+                conn.execute(text('''
+DELETE FROM cart_items WHERE user_id = :uid
+'''), {'uid': user_id})
+
+                return order_id, None
+
+        except ValueError as e:
+            return None, str(e)
+        except Exception:
+            return None, 'An error occurred while processing your order. Please try again.'

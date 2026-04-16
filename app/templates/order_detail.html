@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br><br>
+
+<h2>Order #{{ order.order_id }}</h2>
+<p><a href="{{ url_for('carts.order_history') }}">Back to Orders</a></p>
+
+<div class="container mb-4">
+  <table class="table table-sm" style="max-width: 400px;">
+    <tr><th>Date</th><td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+    <tr><th>Total</th><td>${{ "%.2f"|format(order.total_amount|float) }}</td></tr>
+    <tr><th>Items</th><td>{{ order.num_items }}</td></tr>
+    <tr>
+      <th>Status</th>
+      <td>
+        {% if order.fulfilled %}
+          <span class="badge badge-success">Fulfilled</span>
+        {% else %}
+          <span class="badge badge-warning">Pending</span>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h3>Line Items</h3>
+<table class='table table-hover table-bordered container'>
+  <thead class="thead-dark">
+    <tr>
+      <th>Product</th>
+      <th>Seller</th>
+      <th>Qty</th>
+      <th>Unit Price</th>
+      <th>Line Total</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in line_items %}
+      <tr>
+        <td><a href="{{ url_for('products.product_detail', product_id=item.product_id) }}">{{ item.product_name }}</a></td>
+        <td>{{ item.seller_name }} (ID: {{ item.seller_id }})</td>
+        <td>{{ item.quantity }}</td>
+        <td>${{ "%.2f"|format(item.unit_price|float) }}</td>
+        <td>${{ "%.2f"|format(item.line_total) }}</td>
+        <td>
+          {% if item.fulfilled %}
+            <span class="badge badge-success">Fulfilled</span>
+            <br><small>{{ item.fulfilled_at.strftime('%Y-%m-%d %H:%M') if item.fulfilled_at else '' }}</small>
+          {% else %}
+            <span class="badge badge-warning">Pending</span>
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot>
+    <tr class="table-active">
+      <td colspan="4" class="text-right"><strong>Total:</strong></td>
+      <td><strong>${{ "%.2f"|format(order.total_amount|float) }}</strong></td>
+      <td></td>
+    </tr>
+  </tfoot>
+</table>
+
+{% endblock %}

@@ -52,6 +52,8 @@
       <div style="color: aliceblue; text-align: right; margin-bottom: 25px">
         {% if current_user.is_authenticated %}
           Hello {{current_user.firstname}}! (Balance: ${{current_user.balance}})
+          <a href="{{ url_for('carts.cart_page') }}" type="button" class="btn btn-light">My Cart</a>
+          <a href="{{ url_for('carts.order_history') }}" type="button" class="btn btn-light">My Orders</a>
           <a href="{{ url_for('users.balance') }}" type="button" class="btn btn-light">Manage Balance</a>
           <a href="{{ url_for('users.logout') }}" type="button" class="btn btn-light">Log out</a>
         {% else %}
