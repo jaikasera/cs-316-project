@@ -12,6 +12,7 @@
 
     <div class="d-flex flex-wrap gap-2">
       <a class="btn btn-primary" href="{{ url_for('products.browse_products') }}">Browse / Search Products</a>
+      <a class="btn btn-outline-info" href="{{ url_for('social.user_feedback') }}">Social Feedback Lookup</a>
       {% if current_user.is_authenticated %}
         <a class="btn btn-success" href="{{ url_for('products.create_product') }}">Create New Product</a>
         <a class="btn btn-outline-dark" href="{{ url_for('products.my_products') }}">My Products</a>

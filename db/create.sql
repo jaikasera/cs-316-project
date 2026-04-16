@@ -62,6 +62,18 @@ CREATE TABLE SellerReviews (
     UNIQUE (user_id, seller_id)
 );
 
+CREATE INDEX idx_product_reviews_product_created_at
+ON ProductReviews(product_id, created_at DESC);
+
+CREATE INDEX idx_product_reviews_user_created_at
+ON ProductReviews(user_id, created_at DESC);
+
+CREATE INDEX idx_seller_reviews_seller_created_at
+ON SellerReviews(seller_id, created_at DESC);
+
+CREATE INDEX idx_seller_reviews_user_created_at
+ON SellerReviews(user_id, created_at DESC);
+
 CREATE TABLE cart_items (
     user_id INT NOT NULL REFERENCES Users(id),
     product_id INT NOT NULL REFERENCES Products(id),

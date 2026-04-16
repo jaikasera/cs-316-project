@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br><br>
+
+<h2>All Feedback by User (Paginated)</h2>
+<p>Use this page for Milestone 4 large-data testing and pagination demos.</p>
+
+<form method="GET" action="{{ url_for('social.user_feedback_all') }}" class="form-inline mb-4">
+  <label class="mr-2" for="user_id"><strong>User ID:</strong></label>
+  <input type="number" id="user_id" name="user_id" class="form-control mr-2"
+         placeholder="Enter user ID" min="0"
+         value="{{ request.args.get('user_id', '') }}">
+  <button type="submit" class="btn btn-dark">Find Feedback</button>
+</form>
+
+{% if user is not none %}
+  <h4>Feedback posted by {{ user.firstname }} {{ user.lastname }} (ID: {{ user.id }})</h4>
+  <p class="text-muted">
+    Showing {{ feedback|length if feedback else 0 }} of {{ total_count }} items
+    (page {{ page }} of {{ total_pages }}).
+  </p>
+
+  <form action="{{ url_for('social.user_feedback_all') }}" method="GET" class="form-inline mb-3">
+    <input type="hidden" name="user_id" value="{{ user.id }}">
+    <label class="mr-2" for="per_page">Rows per page</label>
+    <select class="form-control mr-2" id="per_page" name="per_page">
+      <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+      <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+      <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+      <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+    </select>
+    <button class="btn btn-outline-secondary" type="submit">Apply</button>
+  </form>
+
+  {% if feedback %}
+  <table class="table table-hover table-bordered container">
+    <thead class="thead-dark">
+      <tr>
+        <th>#</th>
+        <th>Type</th>
+        <th>Target ID</th>
+        <th>Rating</th>
+        <th>Review</th>
+        <th>Date Posted</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in feedback %}
+      <tr>
+        <td>{{ loop.index + (page - 1) * per_page }}</td>
+        <td>{{ item.feedback_type }}</td>
+        <td>{{ item.target_id }}</td>
+        <td>
+          {% for _ in range(item.rating) %}&#9733;{% endfor %}
+          {% for _ in range(5 - item.rating) %}&#9734;{% endfor %}
+          ({{ item.rating }}/5)
+        </td>
+        <td>{{ item.review if item.review else '(no review text)' }}</td>
+        <td>{{ item.created_at }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if total_pages > 1 %}
+  <div class="d-flex justify-content-between align-items-center mt-3">
+    <div>
+      {% if page > 1 %}
+        <a class="btn btn-outline-primary btn-sm"
+           href="{{ url_for('social.user_feedback_all', user_id=user.id, page=page-1, per_page=per_page) }}">Previous</a>
+      {% endif %}
+    </div>
+    <div class="text-muted small">Page {{ page }} of {{ total_pages }}</div>
+    <div>
+      {% if page < total_pages %}
+        <a class="btn btn-outline-primary btn-sm"
+           href="{{ url_for('social.user_feedback_all', user_id=user.id, page=page+1, per_page=per_page) }}">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+  {% else %}
+  <p>No feedback found for this user.</p>
+  {% endif %}
+{% endif %}
+
+{% endblock %}

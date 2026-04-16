@@ -16,6 +16,10 @@
 
 {% if user is not none %}
     <h4>Feedback posted by {{ user.firstname }} {{ user.lastname }} (ID: {{ user.id }})</h4>
+    <p>
+      Need the full history? Open
+      <a href="{{ url_for('social.user_feedback_all', user_id=user.id) }}">paginated feedback view</a>.
+    </p>
 
     {% if feedback %}
     <table class="table table-hover table-bordered container">

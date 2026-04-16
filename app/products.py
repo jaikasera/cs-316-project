@@ -54,8 +54,28 @@ def product_detail(product_id):
     if product is None:
         return redirect(url_for('products.browse_products'))
 
+    review_page_raw = request.args.get('review_page', default=1, type=int)
+    review_per_page_raw = request.args.get('review_per_page', default=10, type=int)
+    review_sort = request.args.get('review_sort', default='date_desc', type=str)
+    review_page, review_per_page = _normalize_page_and_size(
+        review_page_raw, review_per_page_raw, default_per_page=10
+    )
+    allowed_review_sort = {'date_desc', 'date_asc', 'rating_desc', 'rating_asc'}
+    if review_sort not in allowed_review_sort:
+        review_sort = 'date_desc'
+
     sellers = InventoryItem.get_sellers_for_product(product_id)
-    reviews = Feedback.get_product_reviews(product_id)
+    total_reviews = Feedback.get_product_review_count(product_id)
+    review_total_pages = max(1, (total_reviews + review_per_page - 1) // review_per_page)
+    if review_page > review_total_pages:
+        review_page = review_total_pages
+
+    reviews = Feedback.get_product_reviews(
+        product_id,
+        page=review_page,
+        per_page=review_per_page,
+        sort_by=review_sort,
+    )
     avg_rating = Feedback.get_product_average_rating(product_id)
 
     return render_template(
@@ -63,7 +83,12 @@ def product_detail(product_id):
         product=product,
         sellers=sellers,
         reviews=reviews,
-        avg_rating=avg_rating
+        avg_rating=avg_rating,
+        review_page=review_page,
+        review_per_page=review_per_page,
+        review_total_pages=review_total_pages,
+        total_reviews=total_reviews,
+        review_sort=review_sort,
     )
 
 
