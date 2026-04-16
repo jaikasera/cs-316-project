@@ -63,6 +63,8 @@ TODO LIST (Users Guru)
 *make subpages to align more closely with design
 
 MILESTONE 4
+Link to demo video: https://drive.google.com/file/d/1ZL7iXbDUhyM7SIDq71ptRFl3HRxBIF8X/view?usp=sharing
+
 Users Guru — Darren Li
     * added address and balance columns to users relation and added balance display to main bar
     * modified registration screen and load.sql to support new address field
@@ -89,3 +91,10 @@ Social Guru: responsible for Feedback / Messaging — Blake Passe
     * Added GET /social/feedback/all?user_id=<id>&page=<n>&per_page=<m> for paginated user-authored feedback
     * Added indexes on ProductReviews and SellerReviews for query patterns at scale (product/seller/user with created_at)
     * Increased generated seed scale in db/generated/gen.py (e.g. 300 users, 2000 products, 12k product reviews, 6k seller reviews)
+
+Sellers Guru: responsible for Inventory / Order Fulfillment - Evan Bulan
+    * Added the ability to add products to inventory for seller accounts
+    * Added a seller inventory page to allow for full viewing of seller inventory
+    * Added ability to view current products in inventory and edit quantities/remove products
+    * Implemented order history page to allow for sellers to see all information regarding their order history
+    * Added ability to mark pending orders as fulfilled on order history
