@@ -45,6 +45,11 @@ Sellers Guru: Evan Bulan
    * Added Inventory table (as created originally by Products Guru), added necessary copy to load.sh, and added dummy data to allow for interaction with the Inventory table in testing/demo
    * Implemented backend API endpoint that will return a list of all products of a given seller ID, only retrieving product ID and name for now (though selecting all columns in the SQL query that will be useful for seller dashboard later on)
    * Modeled execution and displayed results of this endpoint on te Flask frontend in similar style to previously created displays, where a user ID can be input and then the product IDs and names are returned
+Carts Guru: Jai Kasera
+   * Implemented backend API endpoint GET /cart/items/<user_id> that returns all cart items for a given user as JSON, with product name, seller name, quantity, unit price, and line total
+   * Added the CartItem model in app/models/cart.py with get_items_by_user() and add_item() methods using parameterized SQL queries with ON CONFLICT upsert logic
+   * Created the cart page at GET /cart with a user ID lookup form and a table displaying all cart items, unit prices, line totals, and an overall cart total
+   * Added POST /cart/add endpoint for adding items to the cart from the product detail page, integrated with the existing products blueprint
 Social Guru: Blake Passe
    * Added ProductReviews and SellerReviews to db/create.sql with seed CSVs and \COPY in db/load.sql
    * Implemented Feedback.get_recent_by_uid(user_id) in app/models/feedback.py (UNION ALL across both tables, newest first, LIMIT 5)
