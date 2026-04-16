@@ -74,7 +74,7 @@ def update_cart_item():
     seller_id = request.form.get('seller_id', type=int)
     quantity = request.form.get('quantity', type=int)
 
-    if not all([product_id, seller_id]) or quantity is None or quantity < 1:
+    if product_id is None or seller_id is None or quantity is None or quantity < 1:
         flash('Invalid quantity.')
         return redirect(url_for('carts.cart_page'))
 
@@ -89,7 +89,7 @@ def remove_cart_item():
     product_id = request.form.get('product_id', type=int)
     seller_id = request.form.get('seller_id', type=int)
 
-    if not all([product_id, seller_id]):
+    if product_id is None or seller_id is None:
         flash('Invalid item.')
         return redirect(url_for('carts.cart_page'))
 
