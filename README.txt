@@ -72,6 +72,13 @@ Products Guru: responsible for Products — Shambhavi Sinha
     * Improved the homepage UI/UX, organizing it into a dashboard with cards, cleaner tables, and consistent labeling.
     * Added cart implementation in conjuction with Carts Guru
 
+Carts Guru: responsible for Cart / Order — Jai Kasera
+    * Implemented full checkout flow with transactional order submission that validates inventory availability and buyer balance before processing
+    * Added cart management functionality including quantity updates and item removal with interactive controls on the cart page
+    * Built buyer-facing order history page with pagination and order detail page showing per-line-item fulfillment status and timestamps
+    * Updated seller fulfillment logic to automatically mark the entire order as fulfilled once all line items are fulfilled
+    * Added navigation links for My Cart and My Orders and integrated cart/order pages with product detail and seller inventory views
+
 Social Guru: responsible for Feedback / Messaging — Blake Passe
     * Added product detail review pagination with sort (newest, oldest, highest, lowest) and per-page controls
     * Added GET /social/feedback/all?user_id=<id>&page=<n>&per_page=<m> for paginated user-authored feedback
