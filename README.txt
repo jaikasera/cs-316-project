@@ -99,7 +99,10 @@ Sellers Guru: responsible for Inventory / Order Fulfillment - Evan Bulan
     * Implemented order history page to allow for sellers to see all information regarding their order history
     * Added ability to mark pending orders as fulfilled on order history
 
-DATA GENERATOR NOTE
+
+FINAL SUBMISSION
+
+DATA GENERATOR
     * db/generated/gen.py now builds a larger marketplace-style seed dataset with hundreds of users, thousands of category-aware products, multi-seller inventory, popularity-weighted reviews, realistic price spreads, mixed stock levels, and repeat cart/order patterns.
     * The generator is intentionally category-driven so products in Books, Electronics, Home, Clothing, Sports, Beauty, Grocery, Pet Supplies, and Office read like real listings instead of generic Faker text.
 
