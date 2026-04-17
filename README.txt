@@ -98,3 +98,16 @@ Sellers Guru: responsible for Inventory / Order Fulfillment - Evan Bulan
     * Added ability to view current products in inventory and edit quantities/remove products
     * Implemented order history page to allow for sellers to see all information regarding their order history
     * Added ability to mark pending orders as fulfilled on order history
+
+DATA GENERATOR NOTE
+    * db/generated/gen.py now builds a larger marketplace-style seed dataset with hundreds of users, thousands of category-aware products, multi-seller inventory, popularity-weighted reviews, realistic price spreads, mixed stock levels, and repeat cart/order patterns.
+    * The generator is intentionally category-driven so products in Books, Electronics, Home, Clothing, Sports, Beauty, Grocery, Pet Supplies, and Office read like real listings instead of generic Faker text.
+
+RECENT WORK SUMMARY
+    * Added browse-page pagination, an only-in-stock filter, and cheapest-seller highlighting.
+    * Added homepage support for top-rated products.
+    * Added product review submission and update support from the product detail page.
+    * Added creator-only product deactivation controls and status handling.
+    * Improved add-to-cart validation and flash-message UX across product/cart flows.
+    * Upgraded the create/edit product form with stronger validation and a more guided setup experience.
+    * Reworked the generated marketplace dataset to be larger, category-aware, and more realistic.

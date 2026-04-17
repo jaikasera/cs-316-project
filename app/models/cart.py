@@ -32,6 +32,26 @@ ORDER BY c.added_at DESC
         return [CartItem(*row) for row in rows]
 
     @staticmethod
+    def get_inventory_snapshot(product_id, seller_id):
+        rows = app.db.execute('''
+SELECT p.available, p.name, i.quantity, i.price, u.firstname, u.lastname
+FROM Inventory i
+JOIN Products p ON p.id = i.product_id
+JOIN Users u ON u.id = i.seller_id
+WHERE i.product_id = :product_id AND i.seller_id = :seller_id
+''', product_id=product_id, seller_id=seller_id)
+        return rows[0] if rows else None
+
+    @staticmethod
+    def get_item_quantity(user_id, product_id, seller_id):
+        rows = app.db.execute('''
+SELECT quantity
+FROM cart_items
+WHERE user_id = :user_id AND product_id = :product_id AND seller_id = :seller_id
+''', user_id=user_id, product_id=product_id, seller_id=seller_id)
+        return rows[0][0] if rows else 0
+
+    @staticmethod
     def add_item(user_id, product_id, seller_id, quantity):
         """
         Adds item to cart. If already exists, increment quantity.

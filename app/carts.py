@@ -8,6 +8,12 @@ from .models.user import User
 bp = Blueprint('carts', __name__)
 
 
+def _safe_next_url(next_url, fallback_endpoint, **fallback_values):
+    if next_url and next_url.startswith('/'):
+        return next_url
+    return url_for(fallback_endpoint, **fallback_values)
+
+
 @bp.route('/cart/items/<int:user_id>')
 def cart_items_json(user_id):
     items = CartItem.get_items_by_user(user_id)
@@ -35,7 +41,7 @@ def cart_page():
     if user_id is not None:
         user = User.get(user_id)
         if user is None:
-            flash('User not found')
+            flash('User not found', 'warning')
             return redirect(url_for('index.index'))
         items = CartItem.get_items_by_user(user_id)
         total = sum(item.line_total for item in items)
@@ -48,13 +54,34 @@ def add_to_cart():
     product_id = request.form.get('product_id', type=int)
     seller_id = request.form.get('seller_id', type=int)
     quantity = request.form.get('quantity', type=int)
+    next_url = request.form.get('next')
 
     if product_id is None or seller_id is None:
-        flash('Missing product or seller.')
+        flash('Missing product or seller.', 'danger')
         return redirect(url_for('index.index'))
 
     if quantity is None or quantity <= 0:
         quantity = 1
+
+    inventory_snapshot = CartItem.get_inventory_snapshot(product_id, seller_id)
+    if inventory_snapshot is None:
+        flash('That seller listing could not be found.', 'warning')
+        return redirect(_safe_next_url(next_url, 'products.product_detail', product_id=product_id))
+
+    available, product_name, stock_quantity, _, seller_firstname, seller_lastname = inventory_snapshot
+    if not available:
+        flash('This product is inactive and cannot be added to the cart.', 'warning')
+        return redirect(_safe_next_url(next_url, 'products.product_detail', product_id=product_id))
+
+    if stock_quantity <= 0:
+        flash('That seller is currently out of stock.', 'warning')
+        return redirect(_safe_next_url(next_url, 'products.product_detail', product_id=product_id))
+
+    existing_quantity = CartItem.get_item_quantity(current_user.id, product_id, seller_id)
+    desired_quantity = existing_quantity + quantity
+    if desired_quantity > stock_quantity:
+        flash(f'Only {stock_quantity} unit(s) are available from this seller right now.', 'warning')
+        return redirect(_safe_next_url(next_url, 'products.product_detail', product_id=product_id))
 
     CartItem.add_item(
         user_id=current_user.id,
@@ -63,8 +90,9 @@ def add_to_cart():
         quantity=quantity
     )
 
-    flash('Item added to cart.')
-    return redirect(url_for('products.product_detail', product_id=product_id))
+    seller_name = f'{seller_firstname} {seller_lastname}'
+    flash(f'Added {quantity} x {product_name} from {seller_name} to your cart.', 'success')
+    return redirect(_safe_next_url(next_url, 'products.product_detail', product_id=product_id))
 
 
 @bp.route('/cart/update', methods=['POST'])
@@ -75,11 +103,11 @@ def update_cart_item():
     quantity = request.form.get('quantity', type=int)
 
     if product_id is None or seller_id is None or quantity is None or quantity < 1:
-        flash('Invalid quantity.')
+        flash('Invalid quantity.', 'danger')
         return redirect(url_for('carts.cart_page'))
 
     CartItem.update_quantity(current_user.id, product_id, seller_id, quantity)
-    flash('Quantity updated.')
+    flash('Quantity updated.', 'success')
     return redirect(url_for('carts.cart_page'))
 
 
@@ -90,11 +118,11 @@ def remove_cart_item():
     seller_id = request.form.get('seller_id', type=int)
 
     if product_id is None or seller_id is None:
-        flash('Invalid item.')
+        flash('Invalid item.', 'danger')
         return redirect(url_for('carts.cart_page'))
 
     CartItem.remove_item(current_user.id, product_id, seller_id)
-    flash('Item removed from cart.')
+    flash('Item removed from cart.', 'info')
     return redirect(url_for('carts.cart_page'))
 
 
@@ -103,10 +131,10 @@ def remove_cart_item():
 def checkout():
     order_id, error = CartItem.checkout(current_user.id)
     if error:
-        flash(error)
+        flash(error, 'danger')
         return redirect(url_for('carts.cart_page'))
 
-    flash(f'Order #{order_id} placed successfully!')
+    flash(f'Order #{order_id} placed successfully!', 'success')
     return redirect(url_for('carts.order_detail', order_id=order_id))
 
 
@@ -137,7 +165,7 @@ def order_history():
 def order_detail(order_id):
     order, line_items = BuyerOrder.get_order_detail(order_id, current_user.id)
     if order is None:
-        flash('Order not found.')
+        flash('Order not found.', 'warning')
         return redirect(url_for('carts.order_history'))
 
     return render_template('order_detail.html', order=order, line_items=line_items)

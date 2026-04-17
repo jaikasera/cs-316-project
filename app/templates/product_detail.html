@@ -24,17 +24,31 @@
           <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
             <div>
               <h2 class="mb-2">{{ product.name }}</h2>
+              {% if product.available %}
+                <span class="badge badge-success">Active product</span>
+              {% else %}
+                <span class="badge badge-secondary">Inactive product</span>
+              {% endif %}
             </div>
 
             {% if current_user.is_authenticated and current_user.id == product.creator_id %}
-              <a class="btn btn-sm btn-outline-primary"
-                 href="{{ url_for('products.edit_product', product_id=product.id) }}">
-                Edit Product
-              </a>
+              <div class="d-flex flex-wrap gap-2">
+                <a class="btn btn-sm btn-outline-primary"
+                   href="{{ url_for('products.edit_product', product_id=product.id) }}">
+                  Edit Product
+                </a>
+                {% if product.available %}
+                <form action="{{ url_for('products.deactivate_product', product_id=product.id) }}" method="POST"
+                      onsubmit="return confirm('Deactivate this product? It will disappear from public browsing.');">
+                  <input type="hidden" name="next" value="{{ request.path }}">
+                  <button class="btn btn-sm btn-outline-danger" type="submit">Deactivate</button>
+                </form>
+                {% endif %}
+              </div>
             {% endif %}
           </div>
 
-          <div class="mb-3">
+          <div class="mb-3 mt-3">
             <span class="fw-semibold">Average Rating:</span>
             {% if avg_rating %}
               <span class="badge bg-warning text-dark fs-6 ms-2">
@@ -46,6 +60,12 @@
             {% endif %}
           </div>
 
+          {% if not product.available %}
+            <div class="alert alert-warning">
+              This product has been deactivated by its creator. Existing pages remain visible, but it is hidden from public browsing.
+            </div>
+          {% endif %}
+
           <h5>Description</h5>
           <p class="mb-0">{{ product.description }}</p>
         </div>
@@ -55,7 +75,10 @@
 
   <div class="card shadow-sm mb-4">
     <div class="card-header bg-white">
-      <h4 class="mb-0">Sellers and Stock</h4>
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h4 class="mb-0">Sellers and Stock</h4>
+        <a class="btn btn-sm btn-outline-dark" href="{{ url_for('carts.cart_page') }}">View My Cart</a>
+      </div>
     </div>
     <div class="card-body">
       {% if sellers %}
@@ -87,7 +110,9 @@
               <td>{{ seller.quantity }}</td>
 
               <td>
-                {% if seller.quantity > 0 %}
+                {% if not product.available %}
+                  <span class="text-muted">Product inactive</span>
+                {% elif seller.quantity > 0 %}
                   <span class="text-success">In stock</span>
                 {% else %}
                   <span class="text-danger">Out of stock</span>
@@ -95,12 +120,13 @@
               </td>
 
               <td>
-                {% if seller.quantity > 0 %}
+                {% if product.available and seller.quantity > 0 %}
                   <form action="{{ url_for('carts.add_to_cart') }}"
                         method="POST"
                         class="d-flex flex-wrap gap-2 align-items-center">
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="seller_id" value="{{ seller.seller_id }}">
+                    <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
                     <input type="number"
                            name="quantity"
                            min="1"
@@ -108,7 +134,7 @@
                            value="1"
                            class="form-control form-control-sm"
                            style="width: 90px;">
-                    <input type="submit" value="Add" class="btn btn-sm btn-dark">
+                    <button type="submit" class="btn btn-sm btn-dark">Add to Cart</button>
                   </form>
                 {% else %}
                   <button class="btn btn-sm btn-secondary" disabled>Unavailable</button>
@@ -155,6 +181,51 @@
   </div>
   {% endif %}
 
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h4 class="mb-0">Write a Review</h4>
+    </div>
+    <div class="card-body">
+      {% if current_user.is_authenticated %}
+        <form action="{{ url_for('products.submit_product_review', product_id=product.id) }}" method="POST" class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label" for="rating">Rating</label>
+            <select class="form-control" id="rating" name="rating" required>
+              <option value="">Choose...</option>
+              {% for value in range(1, 6) %}
+                <option value="{{ value }}"
+                  {% if user_review and user_review.rating == value %}selected{% endif %}>
+                  {{ value }} star{% if value != 1 %}s{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-9">
+            <label class="form-label" for="review">Review</label>
+            <textarea class="form-control" id="review" name="review" rows="3"
+                      placeholder="Share what you thought about this product.">{{ user_review.review if user_review else '' }}</textarea>
+          </div>
+          <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <p class="text-muted small mb-0">
+              {% if user_review %}
+                You already reviewed this product. Re-submitting updates your rating and text.
+              {% else %}
+                You can leave one review per product.
+              {% endif %}
+            </p>
+            <button class="btn btn-primary" type="submit">
+              {% if user_review %}Update Review{% else %}Submit Review{% endif %}
+            </button>
+          </div>
+        </form>
+      {% else %}
+        <p class="text-muted mb-0">
+          <a href="{{ url_for('users.login') }}">Log in</a> to submit a review for this product.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
   <div class="card shadow-sm">
     <div class="card-header bg-white">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -199,7 +270,7 @@
                 </div>
                 <small class="text-muted">{{ review.created_at }}</small>
               </div>
-              <p class="mt-2 mb-0">{{ review.review }}</p>
+              <p class="mt-2 mb-0">{{ review.review or 'No written review provided.' }}</p>
             </div>
           {% endfor %}
         </div>

@@ -22,6 +22,45 @@
     </div>
   </div>
 
+  {% if top_rated_products %}
+<div class="card shadow-sm mb-4">
+  <div class="card-header bg-white">
+    <h3 class="mb-0">Top Rated Products</h3>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      {% for product in top_rated_products %}
+      <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100">
+          {% if product.image_url %}
+            <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
+          {% else %}
+            <div class="d-flex align-items-center justify-content-center bg-light text-muted border-bottom" style="height: 180px;">
+              No image available
+            </div>
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title">{{ product.name }}</h5>
+            <p class="card-text small">
+              {% if product.avg_rating is not none %}
+                <span class="badge bg-warning text-dark">★ {{ "%.2f"|format(product.avg_rating|float) }}</span><br>
+              {% endif %}
+              {% if product.min_price is not none %}
+                Starting at ${{ product.min_price }}
+              {% endif %}
+            </p>
+            <a class="btn btn-sm btn-outline-dark" href="{{ url_for('products.product_detail', product_id=product.id) }}">
+              View
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
   {% if recent_products %}
   <div class="card shadow-sm mb-4">
     <div class="card-header bg-white">
@@ -262,5 +301,6 @@
   </div>
 
 </div>
+
 
 {% endblock %}

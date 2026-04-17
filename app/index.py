@@ -17,6 +17,9 @@ def index():
     # recently added products for homepage cards
     recent_products = Product.get_recent(4)
 
+    # top rated products for homepage cards
+    top_rated_products = Product.get_top_rated(4)
+
     # purchases for logged-in user
     if current_user.is_authenticated:
         purchases = Purchase.get_all_by_uid_since(
@@ -30,5 +33,6 @@ def index():
         'index.html',
         avail_products=products,
         purchase_history=purchases,
-        recent_products=recent_products
+        recent_products=recent_products,
+        top_rated_products=top_rated_products,
     )

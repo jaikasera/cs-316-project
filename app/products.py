@@ -16,6 +16,54 @@ def _normalize_page_and_size(page_raw, per_page_raw, default_per_page=25):
     return page, per_page
 
 
+def _safe_next_url(next_url, fallback_endpoint, **fallback_values):
+    if next_url and next_url.startswith('/'):
+        return next_url
+    return url_for(fallback_endpoint, **fallback_values)
+
+
+def _build_product_form_data(product=None):
+    if request.method == 'POST':
+        return {
+            'category_id': request.form.get('category_id', type=int),
+            'name': (request.form.get('name') or '').strip(),
+            'description': (request.form.get('description') or '').strip(),
+            'image_url': (request.form.get('image_url') or '').strip(),
+            'available': bool(request.form.get('available')) if product else True,
+        }
+
+    return {
+        'category_id': product.category_id if product else None,
+        'name': product.name if product else '',
+        'description': product.description if product else '',
+        'image_url': product.image_url if product and product.image_url else '',
+        'available': product.available if product else True,
+    }
+
+
+def _validate_product_form(form_data, categories):
+    category_ids = {category.id for category in categories}
+
+    if form_data['category_id'] not in category_ids:
+        return 'Choose a valid category.'
+
+    if len(form_data['name']) < 3:
+        return 'Product name should be at least 3 characters long.'
+
+    if len(form_data['name']) > 120:
+        return 'Product name should stay under 120 characters.'
+
+    if len(form_data['description']) < 20:
+        return 'Add a more descriptive product summary of at least 20 characters.'
+
+    if form_data['image_url'] and not (
+        form_data['image_url'].startswith('http://') or form_data['image_url'].startswith('https://')
+    ):
+        return 'Image URL must start with http:// or https://.'
+
+    return None
+
+
 @bp.route('/products')
 def browse_products():
     category_id = request.args.get('category_id', type=int)
@@ -24,15 +72,37 @@ def browse_products():
     min_price = request.args.get('min_price', type=float)
     max_price = request.args.get('max_price', type=float)
     min_rating = request.args.get('min_rating', type=float)
+    only_in_stock = request.args.get('only_in_stock') == '1'
+    page_raw = request.args.get('page', default=1, type=int)
+    per_page_raw = request.args.get('per_page', default=25, type=int)
+    page, per_page = _normalize_page_and_size(page_raw, per_page_raw)
 
-    products = Product.search(
+    products, total_count = Product.search(
         category_id=category_id,
         keyword=keyword,
         sort_by=sort_by,
         min_price=min_price,
         max_price=max_price,
-        min_rating=min_rating
+        min_rating=min_rating,
+        only_in_stock=only_in_stock,
+        page=page,
+        per_page=per_page,
     )
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+    if page > total_pages:
+        page = total_pages
+        products, total_count = Product.search(
+            category_id=category_id,
+            keyword=keyword,
+            sort_by=sort_by,
+            min_price=min_price,
+            max_price=max_price,
+            min_rating=min_rating,
+            only_in_stock=only_in_stock,
+            page=page,
+            per_page=per_page,
+        )
+
     categories = Category.get_all()
 
     return render_template(
@@ -44,7 +114,12 @@ def browse_products():
         sort_by=sort_by,
         min_price=min_price,
         max_price=max_price,
-        min_rating=min_rating
+        min_rating=min_rating,
+        only_in_stock=only_in_stock,
+        page=page,
+        per_page=per_page,
+        total_count=total_count,
+        total_pages=total_pages,
     )
 
 
@@ -77,6 +152,9 @@ def product_detail(product_id):
         sort_by=review_sort,
     )
     avg_rating = Feedback.get_product_average_rating(product_id)
+    user_review = None
+    if current_user.is_authenticated:
+        user_review = Feedback.get_product_review_by_user(product_id, current_user.id)
 
     return render_template(
         'product_detail.html',
@@ -89,31 +167,69 @@ def product_detail(product_id):
         review_total_pages=review_total_pages,
         total_reviews=total_reviews,
         review_sort=review_sort,
+        user_review=user_review,
     )
+
+
+@bp.route('/products/<int:product_id>/review', methods=['POST'])
+@login_required
+def submit_product_review(product_id):
+    product = Product.get(product_id)
+    if product is None or not product.available:
+        flash('That product is not available for review.', 'warning')
+        return redirect(url_for('products.browse_products'))
+
+    rating = request.form.get('rating', type=int)
+    review = (request.form.get('review') or '').strip()
+
+    if rating is None or rating < 1 or rating > 5:
+        flash('Choose a rating from 1 to 5 stars.', 'danger')
+        return redirect(url_for('products.product_detail', product_id=product_id))
+
+    is_update = Feedback.get_product_review_by_user(product_id, current_user.id) is not None
+    Feedback.upsert_product_review(product_id, current_user.id, rating, review or None)
+
+    if is_update:
+        flash('Your product review was updated.', 'success')
+    else:
+        flash('Thanks for reviewing this product.', 'success')
+    return redirect(url_for('products.product_detail', product_id=product_id))
 
 
 @bp.route('/products/new', methods=['GET', 'POST'])
 @login_required
 def create_product():
     categories = Category.get_all()
+    form_data = _build_product_form_data()
 
     if request.method == 'POST':
-        category_id = request.form.get('category_id', type=int)
-        name = request.form.get('name')
-        description = request.form.get('description')
-        image_url = request.form.get('image_url')
+        error = _validate_product_form(form_data, categories)
+        if error:
+            flash(error, 'danger')
+            return render_template(
+                'product_form.html',
+                categories=categories,
+                product=None,
+                form_data=form_data,
+            )
 
         product_id = Product.create(
             current_user.id,
-            category_id,
-            name,
-            description,
-            image_url,
+            form_data['category_id'],
+            form_data['name'],
+            form_data['description'],
+            form_data['image_url'] or None,
             True
         )
+        flash('Product created successfully.', 'success')
         return redirect(url_for('products.product_detail', product_id=product_id))
 
-    return render_template('product_form.html', categories=categories, product=None)
+    return render_template(
+        'product_form.html',
+        categories=categories,
+        product=None,
+        form_data=form_data,
+    )
 
 
 @bp.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
@@ -121,29 +237,63 @@ def create_product():
 def edit_product(product_id):
     product = Product.get(product_id)
     if product is None or product.creator_id != current_user.id:
+        flash('You can only edit products that you created.', 'warning')
         return redirect(url_for('products.browse_products'))
 
     categories = Category.get_all()
+    form_data = _build_product_form_data(product=product)
 
     if request.method == 'POST':
-        category_id = request.form.get('category_id', type=int)
-        name = request.form.get('name')
-        description = request.form.get('description')
-        image_url = request.form.get('image_url')
-        available = bool(request.form.get('available'))
+        error = _validate_product_form(form_data, categories)
+        if error:
+            flash(error, 'danger')
+            return render_template(
+                'product_form.html',
+                categories=categories,
+                product=product,
+                form_data=form_data,
+            )
 
         Product.update(
             product_id,
             current_user.id,
-            category_id,
-            name,
-            description,
-            image_url,
-            available
+            form_data['category_id'],
+            form_data['name'],
+            form_data['description'],
+            form_data['image_url'] or None,
+            form_data['available']
         )
+        flash('Product updated.', 'success')
         return redirect(url_for('products.product_detail', product_id=product_id))
 
-    return render_template('product_form.html', categories=categories, product=product)
+    return render_template(
+        'product_form.html',
+        categories=categories,
+        product=product,
+        form_data=form_data,
+    )
+
+
+@bp.route('/products/<int:product_id>/deactivate', methods=['POST'])
+@login_required
+def deactivate_product(product_id):
+    product = Product.get(product_id)
+    if product is None:
+        flash('Product not found.', 'warning')
+        return redirect(url_for('products.my_products'))
+
+    if product.creator_id != current_user.id:
+        flash('Only the product creator can deactivate this product.', 'danger')
+        return redirect(url_for('products.product_detail', product_id=product_id))
+
+    updated_rows = Product.deactivate(product_id, current_user.id)
+    if updated_rows:
+        flash('Product deactivated. It will no longer appear in public browsing.', 'success')
+    else:
+        flash('This product is already inactive.', 'info')
+
+    next_url = request.form.get('next')
+    return redirect(_safe_next_url(next_url, 'products.my_products'))
 
 
 @bp.route('/products/my')
@@ -241,19 +391,19 @@ def add_inventory():
         price = None
 
     if product_id is None:
-        flash('Product ID is required.')
+        flash('Product ID is required.', 'danger')
         return redirect(url_for('index.index'))
 
     if Product.get(product_id) is None:
-        flash('No product exists with that ID.')
+        flash('No product exists with that ID.', 'warning')
         return redirect(url_for('index.index'))
 
     if quantity is None or quantity < 0:
-        flash('Quantity must be a non-negative whole number.')
+        flash('Quantity must be a non-negative whole number.', 'danger')
         return redirect(url_for('index.index'))
 
     if price is None or price < 0:
-        flash('Price must be a non-negative number.')
+        flash('Price must be a non-negative number.', 'danger')
         return redirect(url_for('index.index'))
 
     InventoryItem.add_item_to_inventory(
@@ -262,7 +412,7 @@ def add_inventory():
         quantity=quantity,
         price=price,
     )
-    flash('Product listing saved to your inventory.')
+    flash('Product listing saved to your inventory.', 'success')
     return redirect(url_for('products.seller_inventory_page', seller_id=current_user.id))
 
 
@@ -271,7 +421,7 @@ def add_inventory():
 def my_inventory_lookup():
     product_id = request.args.get('product_id', type=int)
     if product_id is None:
-        flash('Enter a product ID to open your listing.')
+        flash('Enter a product ID to open your listing.', 'warning')
         return redirect(url_for('index.index'))
     return redirect(url_for('products.my_inventory_detail', product_id=product_id))
 
@@ -285,7 +435,7 @@ def my_inventory_detail(product_id):
 
     listing = InventoryItem.get_inventory_item_for_seller(current_user.id, product_id)
     if listing is None:
-        flash('That product is not in your inventory (or the product no longer exists).')
+        flash('That product is not in your inventory (or the product no longer exists).', 'warning')
         return redirect(
             url_for(
                 'products.seller_inventory_page',
@@ -311,7 +461,7 @@ def my_inventory_update_quantity(product_id):
 
     quantity = request.form.get('quantity', type=int)
     if quantity is None or quantity < 0:
-        flash('Quantity must be a non-negative whole number.')
+        flash('Quantity must be a non-negative whole number.', 'danger')
         return redirect(
             url_for(
                 'products.my_inventory_detail',
@@ -325,7 +475,7 @@ def my_inventory_update_quantity(product_id):
         current_user.id, product_id, quantity
     )
     if rows == 0:
-        flash('Listing not found.')
+        flash('Listing not found.', 'warning')
         return redirect(
             url_for(
                 'products.seller_inventory_page',
@@ -335,7 +485,7 @@ def my_inventory_update_quantity(product_id):
             )
         )
 
-    flash('Quantity updated.')
+    flash('Quantity updated.', 'success')
     return redirect(
         url_for(
             'products.my_inventory_detail',
@@ -355,9 +505,9 @@ def my_inventory_remove(product_id):
 
     rows = InventoryItem.remove_inventory_item(current_user.id, product_id)
     if rows == 0:
-        flash('Listing not found.')
+        flash('Listing not found.', 'warning')
     else:
-        flash('Removed this product from your inventory.')
+        flash('Removed this product from your inventory.', 'success')
     return redirect(
         url_for(
             'products.seller_inventory_page',

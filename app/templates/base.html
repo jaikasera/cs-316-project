@@ -25,7 +25,7 @@
     }
 
     .main {
-        padding: 0px 10px;
+        padding: 0px 10px 30px;
     }
 
     .login-main-text {
@@ -41,6 +41,12 @@
     .btn-black {
         background-color: #000 !important;
         color: #fff;
+    }
+
+    .flash-stack .alert {
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        border: none;
     }
   </style>
 </head>
@@ -63,11 +69,24 @@
     {% endblock %}
   </div>
   <div class="main">
-    {% with messages = get_flashed_messages() %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
-        <div class="container mt-2">
-          {% for msg in messages %}
-            <div class="alert alert-info" role="alert">{{ msg }}</div>
+        <div class="container mt-3 flash-stack">
+          {% for category, msg in messages %}
+            {% set alert_class = 'info' %}
+            {% if category in ['danger', 'error'] %}
+              {% set alert_class = 'danger' %}
+            {% elif category == 'success' %}
+              {% set alert_class = 'success' %}
+            {% elif category == 'warning' %}
+              {% set alert_class = 'warning' %}
+            {% endif %}
+            <div class="alert alert-{{ alert_class }} alert-dismissible fade show" role="alert">
+              {{ msg }}
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
           {% endfor %}
         </div>
       {% endif %}
