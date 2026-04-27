@@ -2,12 +2,26 @@ from flask import current_app as app
 
 
 class CartItem:
-    def __init__(self, user_id, product_id, seller_id, product_name,
-                 seller_firstname, seller_lastname, quantity, unit_price, added_at):
+    def __init__(
+        self,
+        user_id,
+        product_id,
+        seller_id,
+        product_name,
+        product_image_url,
+        product_available,
+        seller_firstname,
+        seller_lastname,
+        quantity,
+        unit_price,
+        added_at,
+    ):
         self.user_id = user_id
         self.product_id = product_id
         self.seller_id = seller_id
         self.product_name = product_name
+        self.product_image_url = product_image_url
+        self.product_available = product_available
         self.seller_name = f"{seller_firstname} {seller_lastname}"
         self.quantity = quantity
         self.unit_price = unit_price
@@ -19,6 +33,8 @@ class CartItem:
         rows = app.db.execute('''
 SELECT c.user_id, c.product_id, c.seller_id,
        p.name AS product_name,
+       p.image_url,
+       p.available,
        s.firstname AS seller_firstname,
        s.lastname AS seller_lastname,
        c.quantity, c.unit_price, c.added_at
@@ -90,7 +106,7 @@ WHERE user_id = :user_id AND product_id = :product_id AND seller_id = :seller_id
 ''', user_id=user_id, product_id=product_id, seller_id=seller_id)
 
     @staticmethod
-    def checkout(user_id):
+    def checkout(user_id, discount_amount=0.0):
         """
         Submit the entire cart as one order in a single SERIALIZABLE transaction.
         Returns (order_id, None) on success or (None, error_message) on failure.
@@ -113,7 +129,9 @@ FOR UPDATE
                 cart = [{'product_id': r[0], 'seller_id': r[1],
                          'quantity': r[2], 'unit_price': float(r[3])} for r in rows]
 
-                total_amount = sum(item['unit_price'] * item['quantity'] for item in cart)
+                subtotal = sum(item['unit_price'] * item['quantity'] for item in cart)
+                discount_amount = max(0.0, min(float(discount_amount or 0), subtotal))
+                total_amount = subtotal - discount_amount
                 num_items = sum(item['quantity'] for item in cart)
 
                 # 2. Check inventory for every line

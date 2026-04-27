@@ -1,303 +1,412 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container mt-4 mb-5">
+{% macro mini_tile(item, cta='View Item') %}
+<div class="product-tile">
+  {% if item.image_url %}
+    <img class="product-thumb" src="{{ item.image_url }}" alt="{{ item.name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    <div class="product-thumb poke-image-frame" style="display:none;">ITEM ART</div>
+  {% else %}
+    <div class="product-thumb poke-image-frame">ITEM ART</div>
+  {% endif %}
+  <div class="tile-title">{{ item.name }}</div>
+  <div class="poke-caption">{{ item.category_name if item.category_name else 'General Merchandise' }}</div>
+  <div class="poke-price">P${{ item.min_price if item.min_price is not none else 'N/A' }}</div>
+  <a class="btn-poke mt-auto" href="{{ url_for('products.product_detail', product_id=item.id) }}">{{ cta }}</a>
+</div>
+{% endmacro %}
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <div class="row g-4">
-        <div class="col-md-4 text-center">
-          {% if product.image_url %}
-            <img src="{{ product.image_url }}"
-                 alt="{{ product.name }}"
-                 class="img-fluid rounded border"
-                 style="max-height: 320px;">
-          {% else %}
-            <div class="border rounded d-flex align-items-center justify-content-center bg-light text-muted"
-                 style="height: 320px;">
-              No image available
-            </div>
-          {% endif %}
+<div class="container-fluid px-0">
+  <div class="poke-panel section-spacer">
+    <div class="row">
+      <div class="col-lg-5 mb-4 mb-lg-0">
+        {% if gallery_images %}
+          <img src="{{ gallery_images[0] }}" alt="{{ product.name }}" class="w-100" style="border: 4px solid var(--pk-border); border-radius: 18px; height: 380px; object-fit: cover; background: #eef6ff;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="poke-image-frame" style="height: 380px; display:none;">NO ITEM ART</div>
+        {% elif product.image_url %}
+          <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-100" style="border: 4px solid var(--pk-border); border-radius: 18px; height: 380px; object-fit: cover; background: #eef6ff;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="poke-image-frame" style="height: 380px; display:none;">NO ITEM ART</div>
+        {% else %}
+          <div class="poke-image-frame" style="height: 380px;">NO ITEM ART</div>
+        {% endif %}
+        {% if gallery_images|length > 1 %}
+        <div class="row mt-3">
+          {% for image_url in gallery_images %}
+          <div class="col-3">
+            <img src="{{ image_url }}" alt="{{ product.name }} gallery {{ loop.index }}" class="w-100" style="height:90px; object-fit:cover; border-radius:14px; border:2px solid var(--pk-border); background:#eef6ff;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="poke-image-frame" style="height:90px; display:none;">ART</div>
+          </div>
+          {% endfor %}
         </div>
-
-        <div class="col-md-8">
-          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-            <div>
-              <h2 class="mb-2">{{ product.name }}</h2>
-              {% if product.available %}
-                <span class="badge badge-success">Active product</span>
-              {% else %}
-                <span class="badge badge-secondary">Inactive product</span>
+        {% endif %}
+      </div>
+      <div class="col-lg-7">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+          <div>
+            <div class="poke-caption mb-2">ITEM DATA</div>
+            <h2 class="poke-panel-title mb-2">{{ product.name }}</h2>
+            <div class="d-flex flex-wrap" style="gap:8px;">
+              <div class="{% if product.available %}poke-status-good{% else %}poke-status-bad{% endif %}">
+                {% if product.available %}AVAILABLE NOW{% else %}RETIRED ITEM{% endif %}
+              </div>
+              {% if product.total_stock and product.total_stock <= 3 %}
+                <div class="poke-status-bad">LOW STOCK ALERT</div>
+              {% elif not product.total_stock %}
+                <div class="poke-status-bad">RESTOCK WATCH</div>
+              {% endif %}
+              {% if product.order_count >= 8 %}
+                <div class="poke-status-featured">POPULAR PICK</div>
               {% endif %}
             </div>
-
-            {% if current_user.is_authenticated and current_user.id == product.creator_id %}
-              <div class="d-flex flex-wrap gap-2">
-                <a class="btn btn-sm btn-outline-primary"
-                   href="{{ url_for('products.edit_product', product_id=product.id) }}">
-                  Edit Product
-                </a>
-                {% if product.available %}
-                <form action="{{ url_for('products.deactivate_product', product_id=product.id) }}" method="POST"
-                      onsubmit="return confirm('Deactivate this product? It will disappear from public browsing.');">
-                  <input type="hidden" name="next" value="{{ request.path }}">
-                  <button class="btn btn-sm btn-outline-danger" type="submit">Deactivate</button>
-                </form>
-                {% endif %}
-              </div>
-            {% endif %}
-          </div>
-
-          <div class="mb-3 mt-3">
-            <span class="fw-semibold">Average Rating:</span>
-            {% if avg_rating %}
-              <span class="badge bg-warning text-dark fs-6 ms-2">
-                ★ {{ "%.2f"|format(avg_rating|float) }}
-              </span>
-              <span class="text-muted ms-2">from {{ total_reviews }} reviews</span>
-            {% else %}
-              <span class="badge bg-secondary fs-6 ms-2">No ratings yet</span>
-            {% endif %}
-          </div>
-
-          {% if not product.available %}
-            <div class="alert alert-warning">
-              This product has been deactivated by its creator. Existing pages remain visible, but it is hidden from public browsing.
+            {% if product_tags %}
+            <div class="d-flex flex-wrap mt-2" style="gap:8px;">
+              {% for tag in product_tags %}
+                <a class="poke-status-featured" href="{{ url_for('products.browse_products', tag=tag.slug) }}">{{ tag.display_name }}</a>
+              {% endfor %}
             </div>
-          {% endif %}
-
-          <h5>Description</h5>
-          <p class="mb-0">{{ product.description }}</p>
+            {% endif %}
+          </div>
+          <div class="d-flex flex-wrap gap-2">
+            <form action="{{ url_for('products.toggle_product_wishlist', product_id=product.id) }}" method="POST">
+              <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+              <button class="{% if wishlist_active %}btn-poke-alt{% else %}btn-poke{% endif %}" type="submit">
+                {% if wishlist_active %}Saved to Wish List{% else %}Save to Wish List{% endif %}
+              </button>
+            </form>
+            {% if current_user.is_authenticated and current_user.id == product.creator_id %}
+              <a class="btn-poke-alt" href="{{ url_for('products.edit_product', product_id=product.id) }}">Edit</a>
+              {% if product.available %}
+              <form action="{{ url_for('products.deactivate_product', product_id=product.id) }}" method="POST"
+                    onsubmit="return confirm('Deactivate this product? It will disappear from public browsing.');">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button class="btn-poke-danger" type="submit">Retire</button>
+              </form>
+              {% endif %}
+            {% endif %}
+          </div>
         </div>
+
+        <div class="poke-log-list mb-4">
+          <div class="poke-log-row">
+            <div class="poke-line">
+              <span>TRAINER RATING</span>
+              <span class="star-meter">
+                {% set rating_value = avg_rating|default(0)|float|round(0, 'floor')|int %}
+                {% for i in range(5) %}{% if i < rating_value %}★{% else %}☆{% endif %}{% endfor %}
+              </span>
+            </div>
+            <div class="poke-caption">{{ product.review_count }} REVIEW{{ 'S' if product.review_count != 1 else '' }}</div>
+          </div>
+          <div class="poke-log-row">
+            <div class="poke-line">
+              <span>PRICE RANGE</span>
+              <span class="poke-price">
+                {% if sellers %}
+                  P${{ sellers[0].price }}{% if sellers|length > 1 %} - P${{ sellers[-1].price }}{% endif %}
+                {% else %}
+                  N/A
+                {% endif %}
+              </span>
+            </div>
+            <div class="poke-caption">{{ price_story.label }}</div>
+          </div>
+          <div class="poke-log-row">
+            <span>DESCRIPTION</span>
+            <p class="poke-subtitle mb-0 mt-2">{{ product.description }}</p>
+          </div>
+          <div class="poke-log-row">
+            <span>PRICE WATCH</span>
+            <p class="poke-subtitle mb-0 mt-2">{{ price_story.detail }}</p>
+          </div>
+        </div>
+
+        {% if variants %}
+        <div class="poke-panel" style="padding:16px;">
+          <h4 class="section-title mb-2" style="font-size:1.4rem;">Available Variants</h4>
+          <div class="row">
+            {% for variant_name, values in variants.items() %}
+            <div class="col-md-6 mb-2">
+              <div class="poke-caption mb-2">{{ variant_name|upper }}</div>
+              <div class="d-flex flex-wrap" style="gap:8px;">
+                {% for value in values %}
+                <span class="poke-status-featured">{{ value }}</span>
+                {% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% if not product.available %}
+          <div class="poke-alert poke-alert-warning mt-3">THIS ITEM HAS BEEN RETIRED FROM THE MART.</div>
+        {% endif %}
       </div>
     </div>
   </div>
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-white">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h4 class="mb-0">Sellers and Stock</h4>
-        <a class="btn btn-sm btn-outline-dark" href="{{ url_for('carts.cart_page') }}">View My Cart</a>
-      </div>
-    </div>
-    <div class="card-body">
-      {% if sellers %}
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Seller</th>
-              <th>Price</th>
-              <th>Quantity in Stock</th>
-              <th>Status</th>
-              <th>Add to Cart</th>
-            </tr>
-          </thead>
-          <tbody>
+  <div class="row section-spacer">
+    <div class="col-lg-8 mb-4 mb-lg-0">
+      <div class="poke-panel h-100">
+        <div class="poke-line mb-3">
+          <h3 class="poke-panel-title mb-0">CHOOSE A SHOPKEEPER</h3>
+          <a class="btn-poke-alt" href="{{ url_for('carts.cart_page') }}">Open Bag</a>
+        </div>
+
+        {% if sellers %}
+          <div class="poke-log-list">
             {% for seller in sellers %}
-            <tr {% if seller.is_cheapest %}class="table-success"{% endif %}>
-              <td>
-                {{ seller.firstname }} {{ seller.lastname }}
-                {% if seller.is_cheapest %}
-                  <span class="badge bg-success ms-2">Cheapest</span>
-                {% endif %}
-              </td>
-
-              <td>
-                <strong>${{ seller.price }}</strong>
-              </td>
-
-              <td>{{ seller.quantity }}</td>
-
-              <td>
-                {% if not product.available %}
-                  <span class="text-muted">Product inactive</span>
-                {% elif seller.quantity > 0 %}
-                  <span class="text-success">In stock</span>
-                {% else %}
-                  <span class="text-danger">Out of stock</span>
-                {% endif %}
-              </td>
-
-              <td>
+            <div class="poke-log-row {% if seller.is_cheapest %}featured{% endif %}">
+              <div class="poke-line mb-2">
+                <div>
+                  <strong>{{ seller.firstname }} {{ seller.lastname }}</strong>
+                  <div class="poke-caption">SELLER ID {{ seller.seller_id }}</div>
+                </div>
+                <div class="text-right">
+                  <div class="poke-price">P${{ seller.price }}</div>
+                  {% if seller.is_cheapest %}
+                    <div class="poke-status-featured">BEST DEAL</div>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="row mb-3">
+                <div class="col-md-3">
+                  <div class="poke-caption">Seller Rating</div>
+                  <strong>{{ '%.1f'|format(seller.seller_avg_rating|float) }}</strong>
+                </div>
+                <div class="col-md-3">
+                  <div class="poke-caption">Reviews</div>
+                  <strong>{{ seller.seller_review_count }}</strong>
+                </div>
+                <div class="col-md-3">
+                  <div class="poke-caption">Delivery</div>
+                  <strong>{{ seller.delivery_estimate }}</strong>
+                </div>
+                <div class="col-md-3">
+                  <div class="poke-caption">Stock</div>
+                  <strong>{{ seller.quantity }}</strong>
+                </div>
+              </div>
+              <div class="poke-line mb-2">
+                <span>STOCK</span>
+                <span class="poke-caption">
+                  {{ seller.quantity }} ITEM{{ 'S' if seller.quantity != 1 else '' }}
+                  {% if seller.low_stock %}| LOW STOCK{% endif %}
+                </span>
+              </div>
+              <div class="stock-bar mb-3">
+                {% set hp_width = 100 if seller.quantity >= 20 else seller.quantity * 5 %}
+                <div class="stock-bar-fill" style="width: {{ hp_width }}%;"></div>
+              </div>
+              <div class="poke-line">
+                <span class="{% if product.available and seller.quantity > 0 %}poke-status-good{% else %}poke-status-bad{% endif %}">
+                  {% if not product.available %}RETIRED ITEM{% elif seller.quantity > 0 %}READY TO BUY{% else %}OUT OF STOCK{% endif %}
+                </span>
                 {% if product.available and seller.quantity > 0 %}
-                  <form action="{{ url_for('carts.add_to_cart') }}"
-                        method="POST"
-                        class="d-flex flex-wrap gap-2 align-items-center">
+                  <form action="{{ url_for('carts.add_to_cart') }}" method="POST" class="d-flex flex-wrap gap-2 align-items-center">
                     <input type="hidden" name="product_id" value="{{ product.id }}">
                     <input type="hidden" name="seller_id" value="{{ seller.seller_id }}">
                     <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
-                    <input type="number"
-                           name="quantity"
-                           min="1"
-                           max="{{ seller.quantity }}"
-                           value="1"
-                           class="form-control form-control-sm"
-                           style="width: 90px;">
-                    <button type="submit" class="btn btn-sm btn-dark">Add to Cart</button>
+                    <input type="number" name="quantity" min="1" max="{{ seller.quantity }}" value="1" class="form-control" style="width: 90px;">
+                    <button type="submit" class="btn-poke">Put In Bag</button>
                   </form>
                 {% else %}
-                  <button class="btn btn-sm btn-secondary" disabled>Unavailable</button>
+                  <button class="btn-poke-danger" disabled>Unavailable</button>
                 {% endif %}
-              </td>
-            </tr>
+              </div>
+            </div>
             {% endfor %}
-          </tbody>
-        </table>
+          </div>
+        {% else %}
+          <p class="poke-subtitle mb-0">NO SHOPKEEPERS ARE SELLING THIS ITEM RIGHT NOW.</p>
+        {% endif %}
       </div>
-      {% else %}
-        <p class="text-muted mb-0">No seller listings available for this product.</p>
-      {% endif %}
+    </div>
+
+    <div class="col-lg-4">
+      <div class="poke-panel">
+        <h3 class="poke-panel-title mb-3">Seller Comparison</h3>
+        {% if sellers %}
+          <div class="poke-log-list">
+            {% for seller in sellers %}
+            <div class="poke-log-row">
+              <div class="poke-line">
+                <strong>{{ seller.firstname }} {{ seller.lastname }}</strong>
+                <span class="poke-price" style="font-size:1.25rem;">P${{ seller.price }}</span>
+              </div>
+              <div class="poke-caption">
+                {{ seller.delivery_estimate }} | {{ '%.1f'|format(seller.seller_avg_rating|float) }} seller stars | {{ seller.quantity }} in stock
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="poke-subtitle mb-0">Comparison unlocks when sellers list this item.</p>
+        {% endif %}
+      </div>
     </div>
   </div>
 
   {% if current_user.is_authenticated %}
-  <div class="card shadow-sm mb-4 border-success">
-    <div class="card-header bg-white">
-      <h4 class="mb-0">Add this product to your inventory</h4>
-    </div>
-    <div class="card-body">
-      <p class="text-muted small mb-3">
-        You will list this product (ID {{ product.id }}) as seller ID {{ current_user.id }}.
-        Re-submitting updates your quantity and price for this listing.
-      </p>
-      <form action="{{ url_for('products.add_inventory') }}" method="POST" class="row g-3 align-items-end">
-        <input type="hidden" name="product_id" value="{{ product.id }}">
-        <div class="col-md-4">
-          <label class="form-label" for="detail_inv_quantity">Quantity in stock</label>
-          <input class="form-control" type="number" name="quantity" id="detail_inv_quantity"
-                 min="0" value="0" required>
+  <div class="poke-form-panel section-spacer">
+    <h3 class="poke-panel-title">ADD THIS ITEM TO YOUR MART</h3>
+    <p class="poke-subtitle">LIST THIS ITEM IN YOUR OWN SHOPKEEPER INVENTORY.</p>
+    <form action="{{ url_for('products.add_inventory') }}" method="POST" class="row">
+      <input type="hidden" name="product_id" value="{{ product.id }}">
+      <div class="col-md-4 mb-3">
+        <label class="poke-caption" for="detail_inv_quantity">QUANTITY</label>
+        <input class="form-control" type="number" name="quantity" id="detail_inv_quantity" min="0" value="0" required>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label class="poke-caption" for="detail_inv_price">PRICE</label>
+        <input class="form-control" type="number" name="price" id="detail_inv_price" min="0" step="0.01" required>
+      </div>
+      <div class="col-md-4 mb-3 d-flex align-items-end">
+        <button class="btn-poke w-100" type="submit">Save Listing</button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="poke-form-panel section-spacer">
+    <h3 class="poke-panel-title">TRAINER NOTES</h3>
+    {% if current_user.is_authenticated %}
+      <form action="{{ url_for('products.submit_product_review', product_id=product.id) }}" method="POST" class="row">
+        <div class="col-md-3 mb-3">
+          <label class="poke-caption" for="rating">STAR RATING</label>
+          <select class="form-control" id="rating" name="rating" required>
+            <option value="">SELECT</option>
+            {% for value in range(1, 6) %}
+              <option value="{{ value }}" {% if user_review and user_review.rating == value %}selected{% endif %}>{{ value }} STAR{% if value != 1 %}S{% endif %}</option>
+            {% endfor %}
+          </select>
         </div>
-        <div class="col-md-4">
-          <label class="form-label" for="detail_inv_price">Your price ($)</label>
-          <input class="form-control" type="number" name="price" id="detail_inv_price"
-                 min="0" step="0.01" required>
+        <div class="col-md-9 mb-3">
+          <label class="poke-caption" for="review">YOUR NOTE</label>
+          <textarea class="form-control" id="review" name="review" rows="3" placeholder="SHARE WHAT YOU THINK ABOUT THIS ITEM.">{{ user_review.review if user_review else '' }}</textarea>
         </div>
-        <div class="col-md-4">
-          <button class="btn btn-success w-100" type="submit">Save to my inventory</button>
+        <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <span class="poke-caption">{% if user_review %}YOU ALREADY LEFT A NOTE. SUBMIT AGAIN TO REPLACE IT.{% else %}ONE NOTE PER ITEM.{% endif %}</span>
+          <button class="btn-poke" type="submit">{% if user_review %}Update Note{% else %}Save Note{% endif %}</button>
         </div>
       </form>
+    {% else %}
+      <p class="poke-subtitle mb-0"><a href="{{ url_for('users.login') }}">LOG IN</a> TO WRITE A TRAINER NOTE.</p>
+    {% endif %}
+  </div>
+
+  <div class="poke-panel section-spacer">
+    <div class="poke-line mb-3">
+      <h3 class="poke-panel-title mb-0">TRAINER REVIEW BOARD</h3>
+      <span class="poke-caption">{{ total_reviews }} MATCHING REVIEW{{ 'S' if total_reviews != 1 else '' }}</span>
+    </div>
+
+    <form method="GET" action="{{ url_for('products.product_detail', product_id=product.id) }}" class="row mb-3">
+      <div class="col-md-3 mb-3">
+        <label class="poke-caption" for="review_sort">SORT</label>
+        <select class="form-control" id="review_sort" name="review_sort">
+          <option value="date_desc" {% if review_sort == 'date_desc' %}selected{% endif %}>NEWEST</option>
+          <option value="date_asc" {% if review_sort == 'date_asc' %}selected{% endif %}>OLDEST</option>
+          <option value="rating_desc" {% if review_sort == 'rating_desc' %}selected{% endif %}>HIGHEST</option>
+          <option value="rating_asc" {% if review_sort == 'rating_asc' %}selected{% endif %}>LOWEST</option>
+        </select>
+      </div>
+      <div class="col-md-2 mb-3">
+        <label class="poke-caption" for="review_rating">STARS</label>
+        <select class="form-control" id="review_rating" name="review_rating">
+          <option value="">ALL</option>
+          {% for value in range(5, 0, -1) %}
+            <option value="{{ value }}" {% if review_rating == value %}selected{% endif %}>{{ value }}★</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 mb-3">
+        <label class="poke-caption" for="review_per_page">PER PAGE</label>
+        <select class="form-control" id="review_per_page" name="review_per_page">
+          <option value="10" {% if review_per_page == 10 %}selected{% endif %}>10</option>
+          <option value="25" {% if review_per_page == 25 %}selected{% endif %}>25</option>
+          <option value="50" {% if review_per_page == 50 %}selected{% endif %}>50</option>
+          <option value="100" {% if review_per_page == 100 %}selected{% endif %}>100</option>
+        </select>
+      </div>
+      <div class="col-md-5 mb-3 d-flex align-items-end flex-wrap" style="gap:10px;">
+        <label class="d-flex align-items-center mb-0" style="gap:8px;"><input type="checkbox" name="review_with_text" value="1" {% if review_with_text %}checked{% endif %}> With text</label>
+        <label class="d-flex align-items-center mb-0" style="gap:8px;"><input type="checkbox" name="review_recent_only" value="1" {% if review_recent_only %}checked{% endif %}> Recent</label>
+        <label class="d-flex align-items-center mb-0" style="gap:8px;"><input type="checkbox" name="review_verified_only" value="1" {% if review_verified_only %}checked{% endif %}> Verified only</label>
+        <button class="btn-poke-alt" type="submit">Apply</button>
+      </div>
+      <input type="hidden" name="review_page" value="1">
+    </form>
+
+    {% if reviews %}
+      <div class="poke-log-list">
+        {% for review in reviews %}
+          <div class="poke-log-row">
+            <div class="poke-line">
+              <div>
+                <strong>{{ review.firstname }} {{ review.lastname }}</strong>
+                <div class="star-meter mt-2">
+                  {% set review_rating_value = review.rating|int %}
+                  {% for i in range(5) %}{% if i < review_rating_value %}★{% else %}☆{% endif %}{% endfor %}
+                  {% if review.verified_purchase %}
+                    <span class="poke-status-featured ml-2">Verified Purchase</span>
+                  {% endif %}
+                </div>
+              </div>
+              <span class="poke-caption">{{ review.created_at }}</span>
+            </div>
+            <p class="poke-subtitle mb-0 mt-3">{{ review.review or 'NO WRITTEN TRAINER NOTE.' }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="poke-subtitle mb-0">NO TRAINER NOTES MATCHED THOSE FILTERS.</p>
+    {% endif %}
+
+    {% if review_total_pages > 1 %}
+    <div class="poke-line mt-4">
+      <div>
+        {% if review_page > 1 %}
+          <a class="btn-poke-alt" href="{{ url_for('products.product_detail', product_id=product.id, review_page=review_page-1, review_per_page=review_per_page, review_sort=review_sort, review_rating=review_rating, review_with_text=1 if review_with_text else None, review_recent_only=1 if review_recent_only else None, review_verified_only=1 if review_verified_only else None) }}">Previous</a>
+        {% endif %}
+      </div>
+      <span class="poke-caption">PAGE {{ review_page }} OF {{ review_total_pages }}</span>
+      <div>
+        {% if review_page < review_total_pages %}
+          <a class="btn-poke-alt" href="{{ url_for('products.product_detail', product_id=product.id, review_page=review_page+1, review_per_page=review_per_page, review_sort=review_sort, review_rating=review_rating, review_with_text=1 if review_with_text else None, review_recent_only=1 if review_recent_only else None, review_verified_only=1 if review_verified_only else None) }}">Next</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if related_products %}
+  <div class="poke-panel shelf-panel section-spacer">
+    <div class="shelf-header">
+      <h3 class="section-title mb-0">Related Products</h3>
+      <span class="poke-caption">More from {{ product.category_name }}</span>
+    </div>
+    <div class="browse-grid">
+      {% for item in related_products %}
+        {{ mini_tile(item, 'Compare Item') }}
+      {% endfor %}
     </div>
   </div>
   {% endif %}
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-white">
-      <h4 class="mb-0">Write a Review</h4>
+  {% if bundle_suggestions %}
+  <div class="poke-panel shelf-panel">
+    <div class="shelf-header">
+      <h3 class="section-title mb-0">Frequently Bought Together</h3>
+      <span class="poke-caption">Popular bundle companions</span>
     </div>
-    <div class="card-body">
-      {% if current_user.is_authenticated %}
-        <form action="{{ url_for('products.submit_product_review', product_id=product.id) }}" method="POST" class="row g-3">
-          <div class="col-md-3">
-            <label class="form-label" for="rating">Rating</label>
-            <select class="form-control" id="rating" name="rating" required>
-              <option value="">Choose...</option>
-              {% for value in range(1, 6) %}
-                <option value="{{ value }}"
-                  {% if user_review and user_review.rating == value %}selected{% endif %}>
-                  {{ value }} star{% if value != 1 %}s{% endif %}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="col-md-9">
-            <label class="form-label" for="review">Review</label>
-            <textarea class="form-control" id="review" name="review" rows="3"
-                      placeholder="Share what you thought about this product.">{{ user_review.review if user_review else '' }}</textarea>
-          </div>
-          <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <p class="text-muted small mb-0">
-              {% if user_review %}
-                You already reviewed this product. Re-submitting updates your rating and text.
-              {% else %}
-                You can leave one review per product.
-              {% endif %}
-            </p>
-            <button class="btn btn-primary" type="submit">
-              {% if user_review %}Update Review{% else %}Submit Review{% endif %}
-            </button>
-          </div>
-        </form>
-      {% else %}
-        <p class="text-muted mb-0">
-          <a href="{{ url_for('users.login') }}">Log in</a> to submit a review for this product.
-        </p>
-      {% endif %}
+    <div class="browse-grid">
+      {% for item in bundle_suggestions %}
+        {{ mini_tile(item, 'Add Bundle') }}
+      {% endfor %}
     </div>
   </div>
-
-  <div class="card shadow-sm">
-    <div class="card-header bg-white">
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <h4 class="mb-0">Reviews</h4>
-        <span class="text-muted small">{{ total_reviews }} total reviews</span>
-      </div>
-    </div>
-    <div class="card-body">
-      <form method="GET" action="{{ url_for('products.product_detail', product_id=product.id) }}" class="row g-2 mb-3">
-        <div class="col-md-4">
-          <label class="form-label mb-1" for="review_sort">Sort by</label>
-          <select class="form-control form-control-sm" id="review_sort" name="review_sort">
-            <option value="date_desc" {% if review_sort == 'date_desc' %}selected{% endif %}>Newest first</option>
-            <option value="date_asc" {% if review_sort == 'date_asc' %}selected{% endif %}>Oldest first</option>
-            <option value="rating_desc" {% if review_sort == 'rating_desc' %}selected{% endif %}>Highest rating</option>
-            <option value="rating_asc" {% if review_sort == 'rating_asc' %}selected{% endif %}>Lowest rating</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <label class="form-label mb-1" for="review_per_page">Rows per page</label>
-          <select class="form-control form-control-sm" id="review_per_page" name="review_per_page">
-            <option value="10" {% if review_per_page == 10 %}selected{% endif %}>10</option>
-            <option value="25" {% if review_per_page == 25 %}selected{% endif %}>25</option>
-            <option value="50" {% if review_per_page == 50 %}selected{% endif %}>50</option>
-            <option value="100" {% if review_per_page == 100 %}selected{% endif %}>100</option>
-          </select>
-        </div>
-        <input type="hidden" name="review_page" value="1">
-        <div class="col-md-2 d-flex align-items-end">
-          <button class="btn btn-outline-secondary btn-sm w-100" type="submit">Apply</button>
-        </div>
-      </form>
-
-      {% if reviews %}
-        <div class="list-group list-group-flush">
-          {% for review in reviews %}
-            <div class="list-group-item px-0">
-              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                <div>
-                  <strong>{{ review.firstname }} {{ review.lastname }}</strong>
-                  <span class="badge bg-warning text-dark ms-2">{{ review.rating }}/5</span>
-                </div>
-                <small class="text-muted">{{ review.created_at }}</small>
-              </div>
-              <p class="mt-2 mb-0">{{ review.review or 'No written review provided.' }}</p>
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p class="text-muted mb-0">No reviews yet.</p>
-      {% endif %}
-
-      {% if review_total_pages > 1 %}
-      <div class="d-flex justify-content-between align-items-center mt-3">
-        <div>
-          {% if review_page > 1 %}
-            <a class="btn btn-outline-primary btn-sm"
-               href="{{ url_for('products.product_detail', product_id=product.id, review_page=review_page-1, review_per_page=review_per_page, review_sort=review_sort) }}">Previous</a>
-          {% endif %}
-        </div>
-        <div class="text-muted small">Page {{ review_page }} of {{ review_total_pages }}</div>
-        <div>
-          {% if review_page < review_total_pages %}
-            <a class="btn btn-outline-primary btn-sm"
-               href="{{ url_for('products.product_detail', product_id=product.id, review_page=review_page+1, review_per_page=review_per_page, review_sort=review_sort) }}">Next</a>
-          {% endif %}
-        </div>
-      </div>
-      {% endif %}
-    </div>
-  </div>
-
+  {% endif %}
 </div>
 
 {% endblock %}

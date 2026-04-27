@@ -1,9 +1,21 @@
+from types import SimpleNamespace
+
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import current_user, login_required
 
+from .marketplace import (
+    clear_active_coupon,
+    evaluate_coupon,
+    get_active_coupon_code,
+    get_saved_for_later,
+    pop_saved_for_later,
+    save_for_later,
+    set_active_coupon_code,
+)
 from .models.cart import CartItem
 from .models.buyer_order import BuyerOrder
 from .models.user import User
+from .models.product import Product
 
 bp = Blueprint('carts', __name__)
 
@@ -45,7 +57,42 @@ def cart_page():
             return redirect(url_for('index.index'))
         items = CartItem.get_items_by_user(user_id)
         total = sum(item.line_total for item in items)
-    return render_template('cart.html', items=items, user=user, user_id=user_id, total=total)
+
+    saved_items = []
+    coupon = {'code': None, 'valid': False, 'message': None, 'discount': 0.0, 'label': None}
+    final_total = total
+    if current_user.is_authenticated and current_user.id == user_id:
+        for saved in get_saved_for_later():
+            product = Product.get(saved['product_id'])
+            snapshot = CartItem.get_inventory_snapshot(saved['product_id'], saved['seller_id'])
+            if product is None or snapshot is None:
+                continue
+            available, product_name, stock_quantity, unit_price, seller_firstname, seller_lastname = snapshot
+            saved_items.append(SimpleNamespace(
+                product_id=saved['product_id'],
+                seller_id=saved['seller_id'],
+                quantity=saved['quantity'],
+                product_name=product_name,
+                product_image_url=product.image_url,
+                seller_name=f'{seller_firstname} {seller_lastname}',
+                unit_price=float(unit_price),
+                stock_quantity=stock_quantity,
+                available=available,
+            ))
+
+        coupon = evaluate_coupon(total, get_active_coupon_code())
+        final_total = round(max(0.0, total - coupon['discount']), 2)
+
+    return render_template(
+        'cart.html',
+        items=items,
+        user=user,
+        user_id=user_id,
+        total=total,
+        saved_items=saved_items,
+        coupon=coupon,
+        final_total=final_total,
+    )
 
 
 @bp.route('/cart/add', methods=['POST'])
@@ -126,14 +173,109 @@ def remove_cart_item():
     return redirect(url_for('carts.cart_page'))
 
 
+@bp.route('/cart/save-for-later', methods=['POST'])
+@login_required
+def save_cart_item_for_later():
+    product_id = request.form.get('product_id', type=int)
+    seller_id = request.form.get('seller_id', type=int)
+
+    if product_id is None or seller_id is None:
+        flash('Invalid item.', 'danger')
+        return redirect(url_for('carts.cart_page'))
+
+    quantity = CartItem.get_item_quantity(current_user.id, product_id, seller_id)
+    if quantity <= 0:
+        flash('That item is no longer in your bag.', 'warning')
+        return redirect(url_for('carts.cart_page'))
+
+    save_for_later(product_id, seller_id, quantity)
+    CartItem.remove_item(current_user.id, product_id, seller_id)
+    flash('Item moved to Save for later.', 'success')
+    return redirect(url_for('carts.cart_page'))
+
+
+@bp.route('/cart/save-for-later/restore', methods=['POST'])
+@login_required
+def restore_saved_item():
+    product_id = request.form.get('product_id', type=int)
+    seller_id = request.form.get('seller_id', type=int)
+
+    if product_id is None or seller_id is None:
+        flash('Invalid saved item.', 'danger')
+        return redirect(url_for('carts.cart_page'))
+
+    saved = pop_saved_for_later(product_id, seller_id)
+    if saved is None:
+        flash('That saved item could not be found.', 'warning')
+        return redirect(url_for('carts.cart_page'))
+
+    snapshot = CartItem.get_inventory_snapshot(product_id, seller_id)
+    if snapshot is None:
+        flash('That seller listing is no longer available.', 'warning')
+        return redirect(url_for('carts.cart_page'))
+
+    available, _, stock_quantity, _, _, _ = snapshot
+    if not available or stock_quantity <= 0:
+        flash('That saved item is currently unavailable.', 'warning')
+        return redirect(url_for('carts.cart_page'))
+
+    CartItem.add_item(current_user.id, product_id, seller_id, min(saved['quantity'], stock_quantity))
+    flash('Saved item moved back into your bag.', 'success')
+    return redirect(url_for('carts.cart_page'))
+
+
+@bp.route('/cart/save-for-later/remove', methods=['POST'])
+@login_required
+def remove_saved_item():
+    product_id = request.form.get('product_id', type=int)
+    seller_id = request.form.get('seller_id', type=int)
+    if product_id is None or seller_id is None:
+        flash('Invalid saved item.', 'danger')
+        return redirect(url_for('carts.cart_page'))
+
+    pop_saved_for_later(product_id, seller_id)
+    flash('Saved item removed.', 'info')
+    return redirect(url_for('carts.cart_page'))
+
+
+@bp.route('/cart/coupon', methods=['POST'])
+@login_required
+def apply_coupon():
+    code = request.form.get('coupon_code', type=str) or ''
+    subtotal = sum(item.line_total for item in CartItem.get_items_by_user(current_user.id))
+    result = evaluate_coupon(subtotal, code)
+    if not result['code']:
+        clear_active_coupon()
+        flash('Coupon code not recognized.', 'warning')
+    elif not result['valid']:
+        set_active_coupon_code(result['code'])
+        flash(result['message'], 'warning')
+    else:
+        set_active_coupon_code(result['code'])
+        flash(f'{result["code"]} applied for P${result["discount"]:.2f} off.', 'success')
+    return redirect(url_for('carts.cart_page'))
+
+
+@bp.route('/cart/coupon/remove', methods=['POST'])
+@login_required
+def remove_coupon():
+    clear_active_coupon()
+    flash('Coupon removed.', 'info')
+    return redirect(url_for('carts.cart_page'))
+
+
 @bp.route('/cart/checkout', methods=['POST'])
 @login_required
 def checkout():
-    order_id, error = CartItem.checkout(current_user.id)
+    subtotal = sum(item.line_total for item in CartItem.get_items_by_user(current_user.id))
+    coupon = evaluate_coupon(subtotal, get_active_coupon_code())
+    order_id, error = CartItem.checkout(current_user.id, discount_amount=coupon['discount'])
     if error:
         flash(error, 'danger')
         return redirect(url_for('carts.cart_page'))
 
+    if coupon['discount'] > 0:
+        clear_active_coupon()
     flash(f'Order #{order_id} placed successfully!', 'success')
     return redirect(url_for('carts.order_detail', order_id=order_id))
 

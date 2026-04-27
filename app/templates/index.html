@@ -1,306 +1,290 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% macro product_tile(product, cta='View Item') %}
+<div class="product-tile" data-product-card data-product-id="{{ product.id }}">
+  {% if product.image_url %}
+    <img class="product-thumb" src="{{ product.image_url }}" alt="{{ product.name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+    <div class="product-thumb poke-image-frame" style="display:none;">ITEM ART</div>
+  {% else %}
+    <div class="product-thumb poke-image-frame">ITEM ART</div>
+  {% endif %}
 
-<div class="container mt-4 mb-5">
-
-  <div class="p-4 mb-4 bg-light border rounded">
-    <h1 class="mb-2">Mini Amazon Dashboard</h1>
-    <p class="text-muted mb-3">
-      Browse products, explore seller inventory, look up purchases and carts, and view top-priced items.
-    </p>
-
-    <div class="d-flex flex-wrap gap-2">
-      <a class="btn btn-primary" href="{{ url_for('products.browse_products') }}">Browse / Search Products</a>
-      <a class="btn btn-outline-info" href="{{ url_for('social.user_feedback') }}">Social Feedback Lookup</a>
-      {% if current_user.is_authenticated %}
-        <a class="btn btn-success" href="{{ url_for('products.create_product') }}">Create New Product</a>
-        <a class="btn btn-outline-dark" href="{{ url_for('products.my_products') }}">My Products</a>
-        <a class="btn btn-outline-dark" href="{{ url_for('products.seller_inventory_page', seller_id=current_user.id) }}">My Inventory</a>
-        <a class="btn btn-outline-primary" href="{{ url_for('seller_orders.seller_orders_page') }}">My sales orders</a>
-      {% endif %}
-    </div>
+  <div class="tile-topline">
+    <div class="tile-title">{{ product.name }}</div>
+    <form action="{{ url_for('products.toggle_product_wishlist', product_id=product.id) }}" method="POST">
+      <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
+      <button type="submit" class="wish-toggle {% if product.id in wishlist_ids %}is-active{% endif %}" aria-label="Save {{ product.name }}">★</button>
+    </form>
   </div>
 
-  {% if top_rated_products %}
-<div class="card shadow-sm mb-4">
-  <div class="card-header bg-white">
-    <h3 class="mb-0">Top Rated Products</h3>
+  <div class="star-meter">
+    {% if product.avg_rating is not none %}
+      {% set rating_value = product.avg_rating|float|round(0, 'floor')|int %}
+      {% for i in range(5) %}{% if i < rating_value %}★{% else %}☆{% endif %}{% endfor %}
+      <span class="poke-caption">({{ '%.0f'|format((product.seller_count or 1) * 41) }})</span>
+    {% else %}
+      ☆☆☆☆☆ <span class="poke-caption">(0)</span>
+    {% endif %}
   </div>
-  <div class="card-body">
-    <div class="row">
-      {% for product in top_rated_products %}
-      <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100">
-          {% if product.image_url %}
-            <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
-          {% else %}
-            <div class="d-flex align-items-center justify-content-center bg-light text-muted border-bottom" style="height: 180px;">
-              No image available
-            </div>
-          {% endif %}
-          <div class="card-body">
-            <h5 class="card-title">{{ product.name }}</h5>
-            <p class="card-text small">
-              {% if product.avg_rating is not none %}
-                <span class="badge bg-warning text-dark">★ {{ "%.2f"|format(product.avg_rating|float) }}</span><br>
-              {% endif %}
-              {% if product.min_price is not none %}
-                Starting at ${{ product.min_price }}
-              {% endif %}
-            </p>
-            <a class="btn btn-sm btn-outline-dark" href="{{ url_for('products.product_detail', product_id=product.id) }}">
-              View
-            </a>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
+
+  <div>
+    <span class="poke-price">P${{ product.min_price if product.min_price is not none else 'N/A' }}</span>
+    {% if product.min_price is not none %}
+      <span class="strike-price">P${{ '%.0f'|format((product.min_price|float) * 1.35) }}</span>
+    {% endif %}
+  </div>
+
+  <div class="tile-actions">
+    <a class="btn-poke" href="{{ url_for('products.product_detail', product_id=product.id) }}">{{ cta }}</a>
   </div>
 </div>
-{% endif %}
+{% endmacro %}
 
-  {% if recent_products %}
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-white">
-      <h3 class="mb-0">Recently Added Products</h3>
-    </div>
-    <div class="card-body">
-      <div class="row">
-        {% for product in recent_products %}
-        <div class="col-md-6 col-lg-3 mb-3">
-          <div class="card h-100">
-            {% if product.image_url %}
-              <img src="{{ product.image_url }}" class="card-img-top" alt="{{ product.name }}">
-            {% endif %}
-            <div class="card-body">
-              <h5 class="card-title">{{ product.name }}</h5>
-              <p class="card-text small">
-                Category:
-                {{ product.category_name if product.category_name else "Uncategorized" }}<br>
-
-                {% if product.min_price is not none %}
-                  Starting at ${{ product.min_price }}<br>
-                {% endif %}
-
-                {% if product.avg_rating is not none %}
-                  Rating: {{ "%.2f"|format(product.avg_rating|float) }}
-                {% else %}
-                  No ratings yet
-                {% endif %}
-              </p>
-              <a class="btn btn-sm btn-outline-dark"
-                 href="{{ url_for('products.product_detail', product_id=product.id) }}">
-                 View
-              </a>
-            </div>
-          </div>
-        </div>
+{% block content %}
+<div class="home-layout">
+  <aside>
+    <div class="department-card section-spacer">
+      <div class="department-head">Shop by Department</div>
+      <div class="department-list">
+        {% set icons = ['⚪', '🧪', '💿', '🫐', '⚔️', '👕', '🧸', '📘', '🏠', '💻', '🎴', '🎁'] %}
+        {% for category in site_categories[:12] %}
+          <a class="department-link" href="{{ url_for('products.browse_products', category_id=category.id) }}">
+            <span class="dept-icon">{{ icons[loop.index0 % icons|length] }}</span>
+            <span>{{ category.name }}</span>
+          </a>
         {% endfor %}
       </div>
     </div>
-  </div>
-  {% endif %}
 
-  <div class="row g-4 mb-4">
-    <div class="col-md-6 col-lg-3">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Top k Most Expensive</h5>
-          <p class="card-text text-muted">Find the highest-priced products currently listed by sellers.</p>
-          <form action="{{ url_for('products.top_k_products_page') }}" method="GET">
-            <label class="form-label" for="k">Enter k</label>
-            <input class="form-control mb-2" type="number" name="k" min="1" value="5">
-            <button class="btn btn-dark w-100" type="submit">Show Products</button>
-          </form>
+    <a class="home-side-card home-banner-mini" href="{{ url_for('products.browse_products') }}" aria-label="See delivery picks">
+      <img class="delivery-cta-image" src="{{ url_for('static', filename='ui-elements/deliverycta.png') }}" alt="Fast delivery CTA">
+    </a>
+  </aside>
+
+  <section>
+    <div class="hero-panel section-spacer">
+      <div class="hero-slider" data-hero-slider>
+        <div class="hero-slides">
+          <div class="hero-slide banner-mode is-active">
+            <div class="hero-parallax-stage">
+              <div class="hero-layer image-layer">
+                <img src="{{ url_for('static', filename='ui-elements/banner-images/banner1.png') }}" alt="PokeMart banner 1">
+              </div>
+              <div class="hero-layer glow-layer"></div>
+              <div class="hero-layer fog-layer"></div>
+            </div>
+            <div class="hero-copy">
+              <a class="btn-poke" href="{{ url_for('products.browse_products') }}">Shop Now!</a>
+            </div>
+          </div>
+
+          <div class="hero-slide banner-mode">
+            <div class="hero-parallax-stage">
+              <div class="hero-layer image-layer">
+                <img src="{{ url_for('static', filename='ui-elements/banner-images/banner2.png') }}" alt="PokeMart banner 2">
+              </div>
+              <div class="hero-layer glow-layer"></div>
+              <div class="hero-layer fog-layer"></div>
+            </div>
+            <div class="hero-copy">
+              <a class="btn-poke" href="{{ url_for('products.browse_products', sort_by='price_asc') }}">See Deals</a>
+            </div>
+          </div>
+
+          <div class="hero-slide banner-mode">
+            <div class="hero-parallax-stage">
+              <div class="hero-layer image-layer">
+                <img src="{{ url_for('static', filename='ui-elements/banner-images/banner3.png') }}" alt="PokeMart banner 3">
+              </div>
+              <div class="hero-layer glow-layer"></div>
+              <div class="hero-layer fog-layer"></div>
+            </div>
+            <div class="hero-copy">
+              <a class="btn-poke" href="{{ url_for('products.browse_products', sort_by='rating_desc') }}">Browse Favorites</a>
+            </div>
+          </div>
+
+          <div class="hero-slide banner-mode">
+            <div class="hero-parallax-stage">
+              <div class="hero-layer image-layer">
+                <img src="{{ url_for('static', filename='ui-elements/banner-images/banner4.png') }}" alt="PokeMart banner 4">
+              </div>
+              <div class="hero-layer glow-layer"></div>
+              <div class="hero-layer fog-layer"></div>
+            </div>
+            <div class="hero-copy">
+              <a class="btn-poke" href="{{ url_for('products.browse_products', only_in_stock=1) }}">See In-Stock</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-controls">
+          <button type="button" class="hero-arrow" data-hero-prev aria-label="Previous slide">‹</button>
+          <button type="button" class="hero-arrow" data-hero-next aria-label="Next slide">›</button>
+        </div>
+        <div class="hero-dots">
+          <button type="button" class="hero-dot is-active" data-hero-dot="0" aria-label="Slide 1"></button>
+          <button type="button" class="hero-dot" data-hero-dot="1" aria-label="Slide 2"></button>
+          <button type="button" class="hero-dot" data-hero-dot="2" aria-label="Slide 3"></button>
+          <button type="button" class="hero-dot" data-hero-dot="3" aria-label="Slide 4"></button>
         </div>
       </div>
     </div>
 
-    <div class="col-md-6 col-lg-3">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Purchases Lookup</h5>
-          <p class="card-text text-muted">View purchase history for a specific user ID.</p>
-          <form action="{{ url_for('users.user_purchases') }}" method="GET">
-            <label class="form-label" for="user_id">User ID</label>
-            <input class="form-control mb-2" type="number" name="user_id" min="0"
-                   value="{{ request.args.get('user_id', default='') }}">
-            <button class="btn btn-outline-primary w-100" type="submit">Show Purchases</button>
-          </form>
+    <div class="poke-panel shelf-panel section-spacer">
+      <div class="shelf-header">
+      <h3 class="section-title mb-0">Recommended for You</h3>
+      <a href="{{ url_for('products.browse_products') }}">See more</a>
+    </div>
+    <div class="shelf-scroller-wrap">
+      <button type="button" class="shelf-arrow left" data-shelf-prev aria-label="Scroll left">‹</button>
+      <div class="shelf-scroller" data-shelf-scroller>
+          {% for product in personalized_products[:10] %}
+            {{ product_tile(product) }}
+          {% endfor %}
         </div>
+        <button type="button" class="shelf-arrow right" data-shelf-next aria-label="Scroll right">›</button>
       </div>
     </div>
 
-    <div class="col-md-6 col-lg-3">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Cart Items Lookup</h5>
-          <p class="card-text text-muted">Inspect the cart contents for a specific user.</p>
-          <form action="{{ url_for('carts.cart_page') }}" method="GET">
-            <label class="form-label" for="user_id">User ID</label>
-            <input class="form-control mb-2" type="number" name="user_id" min="0" value="">
-            <button class="btn btn-outline-primary w-100" type="submit">Show Cart</button>
-          </form>
+    <div class="poke-panel shelf-panel">
+      <div class="shelf-header">
+        <h3 class="section-title mb-0">Best Sellers</h3>
+        <a href="{{ url_for('products.browse_products', sort_by='rating_desc') }}">See more</a>
+      </div>
+      <div class="shelf-scroller-wrap">
+        <button type="button" class="shelf-arrow left" data-shelf-prev aria-label="Scroll left">‹</button>
+        <div class="shelf-scroller" data-shelf-scroller>
+          {% for product in top_rated_products[:10] %}
+            {{ product_tile(product, 'Check Item') }}
+          {% endfor %}
         </div>
+        <button type="button" class="shelf-arrow right" data-shelf-next aria-label="Scroll right">›</button>
       </div>
     </div>
 
-    <div class="col-md-6 col-lg-3">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">Seller Inventory</h5>
-          <p class="card-text text-muted">Check what a seller currently has listed in inventory.</p>
-          <form action="{{ url_for('products.seller_inventory_page') }}" method="GET">
-            <label class="form-label" for="seller_id">Seller ID</label>
-            <input class="form-control mb-2" type="number" name="seller_id" min="0"
-                   value="{{ request.args.get('seller_id', default=0) }}">
-            <button class="btn btn-outline-primary w-100" type="submit">Show Inventory</button>
-          </form>
+    {% if recently_viewed_products %}
+    <div class="poke-panel shelf-panel section-spacer">
+      <div class="shelf-header">
+        <h3 class="section-title mb-0">Recently Viewed</h3>
+        <a href="{{ url_for('products.browse_products') }}">Back to browse</a>
+      </div>
+      <div class="shelf-scroller-wrap">
+        <button type="button" class="shelf-arrow left" data-shelf-prev aria-label="Scroll left">‹</button>
+        <div class="shelf-scroller" data-shelf-scroller>
+          {% for product in recently_viewed_products %}
+            {{ product_tile(product, 'View Again') }}
+          {% endfor %}
         </div>
+        <button type="button" class="shelf-arrow right" data-shelf-next aria-label="Scroll right">›</button>
       </div>
     </div>
-  </div>
+    {% endif %}
 
-  {% if current_user.is_authenticated %}
-  <div class="row g-4 mb-4">
-    <div class="col-md-6 col-lg-4">
-      <div class="card h-100 shadow-sm border-success">
-        <div class="card-body">
-          <h5 class="card-title">Add Product to Inventory</h5>
-          <p class="card-text text-muted">
-            List an existing catalog product in <strong>your</strong> inventory with a price and stock quantity.
-            If you already sell this product, your quantity and price are updated.
-          </p>
-          <form action="{{ url_for('products.add_inventory') }}" method="POST">
-            <label class="form-label" for="inv_product_id">Product ID</label>
-            <input class="form-control mb-2" type="number" name="product_id" id="inv_product_id" min="1" required>
-            <label class="form-label" for="inv_quantity">Quantity in stock</label>
-            <input class="form-control mb-2" type="number" name="quantity" id="inv_quantity" min="0" value="0" required>
-            <label class="form-label" for="inv_price">Your price ($)</label>
-            <input class="form-control mb-2" type="number" name="price" id="inv_price" min="0" step="0.01" required>
-            <button class="btn btn-success w-100" type="submit">Save to my inventory</button>
-          </form>
+    {% if wishlist_products %}
+    <div class="poke-panel shelf-panel">
+      <div class="shelf-header">
+        <h3 class="section-title mb-0">Wish List Picks</h3>
+        <a href="{{ url_for('products.wishlist_page') }}">Open list</a>
+      </div>
+      <div class="shelf-scroller-wrap">
+        <button type="button" class="shelf-arrow left" data-shelf-prev aria-label="Scroll left">‹</button>
+        <div class="shelf-scroller" data-shelf-scroller>
+          {% for product in wishlist_products %}
+            {{ product_tile(product, 'Open Wish') }}
+          {% endfor %}
         </div>
+        <button type="button" class="shelf-arrow right" data-shelf-next aria-label="Scroll right">›</button>
       </div>
     </div>
-    <div class="col-md-6 col-lg-4">
-      <div class="card h-100 shadow-sm border-primary">
-        <div class="card-body">
-          <h5 class="card-title">My inventory listing</h5>
-          <p class="card-text text-muted">
-            Open a product you already sell: see catalog details, your stock and price, change quantity, or remove the listing.
-          </p>
-          <form action="{{ url_for('products.my_inventory_lookup') }}" method="GET">
-            <label class="form-label" for="manage_inv_product_id">Product ID</label>
-            <input class="form-control mb-2" type="number" name="product_id" id="manage_inv_product_id" min="1" required>
-            <button class="btn btn-primary w-100" type="submit">Open my listing</button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% endif %}
+    {% endif %}
+  </section>
 
-  <div class="card shadow-sm mb-4">
-    <div class="card-header bg-white">
-      <h3 class="mb-0">Products for Sale</h3>
-    </div>
-    <div class="card-body">
-      {% if avail_products %}
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th scope="col">Product ID</th>
-              <th scope="col">Name</th>
-              <th scope="col">Category</th>
-              <th scope="col">Lowest Price</th>
-              <th scope="col">Average Rating</th>
-              <th scope="col">Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for product in avail_products %}
-              <tr>
-                <th scope="row">{{ product.id }}</th>
-                <td>{{ product.name }}</td>
-                <td>{{ product.category_name if product.category_name else "Uncategorized" }}</td>
-                <td>
-                  {% if product.min_price is not none %}
-                    ${{ product.min_price }}
-                  {% else %}
-                    N/A
-                  {% endif %}
-                </td>
-                <td>
-                  {% if product.avg_rating is not none %}
-                    {{ "%.2f"|format(product.avg_rating|float) }}
-                  {% else %}
-                    No ratings
-                  {% endif %}
-                </td>
-                <td>
-                  <a class="btn btn-sm btn-outline-dark"
-                     href="{{ url_for('products.product_detail', product_id=product.id) }}">
-                    View Product
-                  </a>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      {% else %}
-        <p class="text-muted mb-0">No products are currently available.</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="card shadow-sm">
-    <div class="card-header bg-white">
+  <aside class="home-side-stack">
+    <div class="home-side-card signin-card">
+      <h4>Welcome, Trainer!</h4>
       {% if current_user.is_authenticated %}
-        <h3 class="mb-0">Your Recent Purchases</h3>
+        <p class="mb-3">Your cart total is P${{ '%.2f'|format(hud_gold) }} and you have {{ hud_items }} item{{ 's' if hud_items != 1 else '' }} in the bag.</p>
+        <a class="btn-poke" href="{{ url_for('carts.cart_page') }}">Open Bag</a>
       {% else %}
-        <h3 class="mb-0">Recent Purchases</h3>
+        <p class="mb-3">Sign in for the best experience.</p>
+        <a class="btn-poke" href="{{ url_for('users.login') }}">Sign In</a>
+        <div class="text-center poke-caption">New here?</div>
+        <div class="text-center"><a href="{{ url_for('users.register') }}">Create a Trainer account</a></div>
       {% endif %}
     </div>
-    <div class="card-body">
-      {% if current_user.is_authenticated %}
-        {% if purchase_history %}
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th scope="col">Purchase ID</th>
-                <th scope="col">Product ID</th>
-                <th scope="col">Time Purchased</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for purchase in purchase_history %}
-                <tr>
-                  <th scope="row">{{ purchase.id }}</th>
-                  <td>{{ purchase.pid }}</td>
-                  <td>{{ purchase.time_purchased }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-          <p class="text-muted mb-0">You do not have any purchases yet.</p>
-        {% endif %}
-      {% else %}
-        <p class="mb-0">
-          <a href="{{ url_for('users.login') }}">Log in</a> to see your purchase history.
-        </p>
-      {% endif %}
-    </div>
-  </div>
 
+    {% if top_rated_products %}
+    {% set today = top_rated_products[0] %}
+    <div class="home-side-card deal-card">
+      <div class="deal-card-head">
+        <strong>Today's Deals</strong>
+        <a href="{{ url_for('products.browse_products', sort_by='price_asc') }}" style="color:inherit;">See all</a>
+      </div>
+      <div class="deal-card-body">
+        <div class="deal-media">
+          {% if today.image_url %}
+            <img class="deal-thumb" src="{{ today.image_url }}" alt="{{ today.name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="deal-thumb poke-image-frame" style="display:none;">ITEM</div>
+          {% else %}
+            <div class="deal-thumb"></div>
+          {% endif %}
+          <div>
+            <h5 class="mb-1">{{ today.name }}</h5>
+            <div class="star-meter mb-2">
+              {% set rating_value = today.avg_rating|default(0)|float|round(0, 'floor')|int %}
+              {% for i in range(5) %}{% if i < rating_value %}★{% else %}☆{% endif %}{% endfor %}
+              <span class="poke-caption">(1,245)</span>
+            </div>
+            <div class="poke-price">P${{ today.min_price if today.min_price is not none else 'N/A' }}</div>
+            <span class="strike-price">P${{ '%.0f'|format((today.min_price|float) * 1.67) if today.min_price is not none else '' }}</span>
+            <div class="deal-badge mt-2">40% off!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if recent_products %}
+    {% set flash = recent_products[0] %}
+    <div class="home-side-card deal-card flash" data-countdown-seconds="9918">
+      <div class="deal-card-head">
+        <strong>Lightning Deal</strong>
+        <span class="countdown" data-countdown-label>Ends in 02:45:18</span>
+      </div>
+      <div class="deal-card-body">
+        <div class="deal-media">
+          {% if flash.image_url %}
+            <img class="deal-thumb" src="{{ flash.image_url }}" alt="{{ flash.name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="deal-thumb poke-image-frame" style="display:none;">ITEM</div>
+          {% else %}
+            <div class="deal-thumb"></div>
+          {% endif %}
+          <div>
+            <h5 class="mb-1">{{ flash.name }}</h5>
+            <div class="star-meter mb-2">
+              {% if flash.avg_rating is not none %}
+                {% set rating_value = flash.avg_rating|float|round(0, 'floor')|int %}
+                {% for i in range(5) %}{% if i < rating_value %}★{% else %}☆{% endif %}{% endfor %}
+              {% else %}
+                ☆☆☆☆☆
+              {% endif %}
+              <span class="poke-caption">(890)</span>
+            </div>
+            <div class="poke-price">P${{ flash.min_price if flash.min_price is not none else 'N/A' }}</div>
+            <span class="strike-price">P${{ '%.0f'|format((flash.min_price|float) * 1.5) if flash.min_price is not none else '' }}</span>
+            <div class="deal-badge mt-2">33% off!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="home-side-card gift-card">
+      <h4>PokeMart Gift Card</h4>
+      <p class="mb-0">The perfect gift for any Trainer!</p>
+      <img class="gift-card-art" src="{{ url_for('static', filename='ui-elements/pokemart-card.png') }}" alt="PokeMart gift card">
+    </div>
+  </aside>
 </div>
-
-
 {% endblock %}
