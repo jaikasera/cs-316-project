@@ -127,3 +127,4 @@ Products Guru: responsible for Products — Shambhavi Sinha
     * Updated the schema/load files to support Categories with parent-child structure plus Tags and ProductTags join data.
     * Added starter taxonomy seed data in both db/data and db/generated so the new hierarchy/tag workflow is represented in the dataset as well.
     * Revamped the /products/top?k= page into a more polished “top finds” showcase with styled cards, ranking badges, and a friendlier k-selector flow.
+    
