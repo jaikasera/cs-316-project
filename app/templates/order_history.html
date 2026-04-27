@@ -4,10 +4,56 @@
 <br><br>
 
 <h2>My Orders</h2>
-<p><a href="{{ url_for('carts.cart_page') }}">Back to Cart</a></p>
+<p>
+  <a href="{{ url_for('carts.cart_page') }}">Back to Cart</a>
+  | <a href="{{ url_for('carts.order_analytics') }}">Spending Analytics</a>
+</p>
+
+{# ── Search & Filter Controls ── #}
+<div class="container mb-4">
+  <form method="GET" action="{{ url_for('carts.order_history') }}">
+    <div class="form-row align-items-end">
+      <div class="col-md-3 mb-2">
+        <label for="q">Search</label>
+        <input type="text" class="form-control" id="q" name="q" value="{{ search_q }}"
+               placeholder="Order ID, product, or seller">
+      </div>
+      <div class="col-md-2 mb-2">
+        <label for="status">Status</label>
+        <select class="form-control" id="status" name="status">
+          <option value="all" {% if search_status == 'all' %}selected{% endif %}>All</option>
+          <option value="pending" {% if search_status == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="fulfilled" {% if search_status == 'fulfilled' %}selected{% endif %}>Fulfilled</option>
+          <option value="cancelled" {% if search_status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        </select>
+      </div>
+      <div class="col-md-2 mb-2">
+        <label for="date_from">From</label>
+        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+      </div>
+      <div class="col-md-2 mb-2">
+        <label for="date_to">To</label>
+        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+      </div>
+      <div class="col-md-2 mb-2">
+        <label for="sort_by">Sort</label>
+        <select class="form-control" id="sort_by" name="sort_by">
+          <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Newest First</option>
+          <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Oldest First</option>
+          <option value="amount_desc" {% if sort_by == 'amount_desc' %}selected{% endif %}>Highest Amount</option>
+          <option value="amount_asc" {% if sort_by == 'amount_asc' %}selected{% endif %}>Lowest Amount</option>
+          <option value="items_desc" {% if sort_by == 'items_desc' %}selected{% endif %}>Most Items</option>
+        </select>
+      </div>
+      <div class="col-md-1 mb-2">
+        <button type="submit" class="btn btn-primary">Filter</button>
+      </div>
+    </div>
+  </form>
+</div>
 
 {% if orders and orders|length > 0 %}
-<p>{{ total_count }} order{{ 's' if total_count != 1 else '' }} total.</p>
+<p>{{ total_count }} order{{ 's' if total_count != 1 else '' }} found.</p>
 
 <table class='table table-hover table-bordered container'>
   <thead class="thead-dark">
@@ -17,6 +63,7 @@
       <th>Items</th>
       <th>Total</th>
       <th>Status</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -27,10 +74,19 @@
         <td>{{ order.num_items }}</td>
         <td>${{ "%.2f"|format(order.total_amount|float) }}</td>
         <td>
-          {% if order.fulfilled %}
+          {% if order.cancelled %}
+            <span class="badge badge-secondary">Cancelled</span>
+          {% elif order.fulfilled %}
             <span class="badge badge-success">Fulfilled</span>
           {% else %}
             <span class="badge badge-warning">Pending</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if not order.cancelled %}
+          <form action="{{ url_for('carts.reorder', order_id=order.order_id) }}" method="POST" style="display:inline;">
+            <button type="submit" class="btn btn-sm btn-outline-primary">Buy Again</button>
+          </form>
           {% endif %}
         </td>
       </tr>
@@ -43,19 +99,19 @@
   <ul class="pagination justify-content-center">
     {% if page > 1 %}
     <li class="page-item">
-      <a class="page-link" href="{{ url_for('carts.order_history', page=page-1, per_page=per_page) }}">Previous</a>
+      <a class="page-link" href="{{ url_for('carts.order_history', page=page-1, per_page=per_page, q=search_q, status=search_status, date_from=date_from, date_to=date_to, sort_by=sort_by) }}">Previous</a>
     </li>
     {% endif %}
 
     {% for p in range(1, total_pages + 1) %}
     <li class="page-item {{ 'active' if p == page else '' }}">
-      <a class="page-link" href="{{ url_for('carts.order_history', page=p, per_page=per_page) }}">{{ p }}</a>
+      <a class="page-link" href="{{ url_for('carts.order_history', page=p, per_page=per_page, q=search_q, status=search_status, date_from=date_from, date_to=date_to, sort_by=sort_by) }}">{{ p }}</a>
     </li>
     {% endfor %}
 
     {% if page < total_pages %}
     <li class="page-item">
-      <a class="page-link" href="{{ url_for('carts.order_history', page=page+1, per_page=per_page) }}">Next</a>
+      <a class="page-link" href="{{ url_for('carts.order_history', page=page+1, per_page=per_page, q=search_q, status=search_status, date_from=date_from, date_to=date_to, sort_by=sort_by) }}">Next</a>
     </li>
     {% endif %}
   </ul>
@@ -63,7 +119,7 @@
 {% endif %}
 
 {% else %}
-<p>You haven't placed any orders yet.</p>
+<p>No orders found matching your criteria.</p>
 {% endif %}
 
 {% endblock %}

@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, session
 from werkzeug.urls import url_parse
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_wtf import FlaskForm
@@ -32,6 +32,14 @@ def login():
             flash('Invalid email or password')
             return redirect(url_for('users.login'))
         login_user(user)
+
+        # Merge guest cart if any
+        guest_cart = session.pop('guest_cart', None)
+        if guest_cart:
+            from .models.cart import CartItem
+            CartItem.merge_guest_cart(user.id, guest_cart)
+            flash(f'{len(guest_cart)} item(s) from your guest cart have been added.', 'info')
+
         next_page = request.args.get('next')
         if not next_page or url_parse(next_page).netloc != '':
             next_page = url_for('index.index')

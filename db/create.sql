@@ -81,6 +81,7 @@ CREATE TABLE cart_items (
     quantity INT NOT NULL CHECK (quantity > 0),
     unit_price DECIMAL(12,2) NOT NULL CHECK (unit_price >= 0),
     added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    saved BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (user_id, product_id, seller_id)
 );
 
@@ -90,7 +91,8 @@ CREATE TABLE orders (
     total_amount DECIMAL(12,2) NOT NULL,
     num_items INT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    fulfilled BOOLEAN NOT NULL DEFAULT FALSE
+    fulfilled BOOLEAN NOT NULL DEFAULT FALSE,
+    cancelled BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE order_items (
@@ -107,3 +109,30 @@ CREATE TABLE order_items (
 
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+
+CREATE TABLE wishlist (
+    user_id INT NOT NULL REFERENCES Users(id),
+    product_id INT NOT NULL REFERENCES Products(id),
+    added_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, product_id)
+);
+
+CREATE TABLE coupons (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    discount_type VARCHAR(10) NOT NULL CHECK (discount_type IN ('percentage', 'flat')),
+    discount_value DECIMAL(12,2) NOT NULL CHECK (discount_value > 0),
+    min_order_amount DECIMAL(12,2) NOT NULL DEFAULT 0,
+    max_uses INT,
+    expiry_date TIMESTAMP,
+    applicable_product_id INT REFERENCES Products(id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE coupon_uses (
+    id SERIAL PRIMARY KEY,
+    coupon_id INT NOT NULL REFERENCES coupons(id),
+    user_id INT NOT NULL REFERENCES Users(id),
+    order_id INT NOT NULL REFERENCES orders(id),
+    used_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
