@@ -214,6 +214,57 @@
       {% endif %}
     </div>
 
+    {% if top_expensive_products or top_rated_products %}
+    <div class="home-side-card top-shelf-card">
+      <div class="shelf-header" style="margin-bottom: 12px;">
+        <h4 class="mb-0">Top Shelf</h4>
+        <a href="{{ url_for('products.top_k_products_page', k=5) }}">See more</a>
+      </div>
+
+      {% if top_expensive_products %}
+      <div class="mb-3">
+        <div class="poke-caption mb-2">Most Expensive</div>
+        <div class="poke-log-list">
+          {% for row in top_expensive_products[:3] %}
+          <div class="poke-log-row">
+            <div class="poke-line">
+              <div>
+                <strong>{{ row[1] }}</strong>
+                <div class="poke-caption">Top ask P${{ row[2] }}</div>
+              </div>
+              <a class="btn-poke-alt" href="{{ url_for('products.product_detail', product_id=row[0]) }}">Open</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if top_rated_products %}
+      <div>
+        <div class="poke-caption mb-2">Highest Rated</div>
+        <div class="poke-log-list">
+          {% for product in top_rated_products[:3] %}
+          <div class="poke-log-row">
+            <div class="poke-line">
+              <div>
+                <strong>{{ product.name }}</strong>
+                <div class="star-meter">
+                  {% set rating_value = product.avg_rating|default(0)|float|round(0, 'floor')|int %}
+                  {% for i in range(5) %}{% if i < rating_value %}★{% else %}☆{% endif %}{% endfor %}
+                  <span class="poke-caption">{{ '%.1f'|format(product.avg_rating|float) if product.avg_rating is not none else 'N/A' }}</span>
+                </div>
+              </div>
+              <a class="btn-poke-alt" href="{{ url_for('products.product_detail', product_id=product.id) }}">Open</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
     {% if top_rated_products %}
     {% set today = top_rated_products[0] %}
     <div class="home-side-card deal-card">

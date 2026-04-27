@@ -21,6 +21,7 @@ def index():
 
     # top rated products for homepage cards
     top_rated_products = Product.get_top_rated(4)
+    top_expensive_products = Product.get_top_k_expensive(3)
 
     wishlist_ids = get_wishlist_ids()
     recently_viewed_ids = get_recently_viewed_ids()
@@ -53,6 +54,7 @@ def index():
         purchase_history=purchases,
         recent_products=recent_products,
         top_rated_products=top_rated_products,
+        top_expensive_products=top_expensive_products,
         personalized_products=personalized_products,
         recently_viewed_products=recently_viewed_products,
         wishlist_products=wishlist_products,
