@@ -3,12 +3,15 @@ from flask import current_app as app
 
 class CartItem:
     def __init__(self, user_id, product_id, seller_id, product_name,
-                 seller_firstname, seller_lastname, quantity, unit_price, added_at,
-                 saved=False, current_price=None, available_stock=None):
+                 product_image_url, product_available, seller_firstname, seller_lastname,
+                 quantity, unit_price, added_at, saved=False, current_price=None,
+                 available_stock=None):
         self.user_id = user_id
         self.product_id = product_id
         self.seller_id = seller_id
         self.product_name = product_name
+        self.product_image_url = product_image_url
+        self.product_available = product_available
         self.seller_name = f"{seller_firstname} {seller_lastname}"
         self.quantity = quantity
         self.unit_price = unit_price
@@ -37,6 +40,8 @@ class CartItem:
         rows = app.db.execute('''
 SELECT c.user_id, c.product_id, c.seller_id,
        p.name AS product_name,
+       p.image_url,
+       p.available,
        s.firstname AS seller_firstname,
        s.lastname AS seller_lastname,
        c.quantity, c.unit_price, c.added_at,
@@ -229,7 +234,7 @@ DO UPDATE SET
        'qty': qty, 'price': price})
 
     @staticmethod
-    def checkout(user_id, coupon_code=None):
+    def checkout(user_id, coupon_code=None, discount_amount=0.0):
         """
         Submit active (non-saved) cart items as one order in a single SERIALIZABLE transaction.
         Returns (order_id, None) on success or (None, error_message) on failure.
@@ -256,7 +261,7 @@ FOR UPDATE
                 num_items = sum(item['quantity'] for item in cart)
 
                 # Validate and apply coupon if provided
-                discount = 0.0
+                discount = max(0.0, min(float(discount_amount or 0), total_amount))
                 coupon_id = None
                 if coupon_code:
                     coupon_row = conn.execute(text('''

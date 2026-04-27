@@ -5,9 +5,15 @@ SELECT pg_catalog.setval('public.users_id_seq',
                          false);
 
 -- CATEGORIES
-\COPY Categories(name) FROM 'Categories.csv' WITH DELIMITER ',' NULL '' CSV;
+\COPY Categories(id, name, parent_id, slug, is_active) FROM 'Categories.csv' WITH (FORMAT csv, DELIMITER ',', NULL '', FORCE_NULL(parent_id));
 SELECT pg_catalog.setval('public.categories_id_seq',
                          (SELECT MAX(id)+1 FROM Categories),
+                         false);
+
+-- TAGS
+\COPY Tags(id, display_name, slug, created_by, is_active) FROM 'Tags.csv' WITH (FORMAT csv, DELIMITER ',', NULL '', FORCE_NULL(created_by));
+SELECT pg_catalog.setval('public.tags_id_seq',
+                         (SELECT COALESCE(MAX(id), 0)+1 FROM Tags),
                          false);
 
 -- PRODUCTS
@@ -18,6 +24,9 @@ SELECT pg_catalog.setval('public.products_id_seq',
 
 -- INVENTORY
 \COPY Inventory(seller_id, product_id, quantity, price, updated_at) FROM 'Inventory.csv' WITH DELIMITER ',' NULL '' CSV;
+
+-- PRODUCT TAGS
+\COPY ProductTags(product_id, tag_id) FROM 'ProductTags.csv' WITH DELIMITER ',' NULL '' CSV;
 
 -- PURCHASES
 \COPY Purchases(id, uid, pid, time_purchased) FROM 'Purchases.csv' WITH DELIMITER ',' NULL '' CSV;

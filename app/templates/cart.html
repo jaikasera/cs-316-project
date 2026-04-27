@@ -1,243 +1,194 @@
 {% extends "base.html" %}
 
 {% block content %}
-<br><br>
+<div class="container-fluid px-0">
+  <div class="poke-panel section-spacer">
+    <div class="poke-line mb-3">
+      <div>
+        <h2 class="poke-panel-title mb-2">YOUR BAG</h2>
+        <p class="poke-subtitle mb-0">EVERY ITEM YOU PICK UP AT THE MART IS STORED HERE.</p>
+      </div>
+      {% if current_user.is_authenticated %}
+        <a class="btn-poke-alt" href="{{ url_for('carts.order_history') }}">Trainer Log</a>
+      {% endif %}
+    </div>
 
-<h2>Shopping Cart</h2>
-
-{% if current_user.is_authenticated %}
-  <p>
-    <a href="{{ url_for('carts.order_history') }}">View Order History</a>
-    | <a href="{{ url_for('carts.wishlist_page') }}">My Wishlist</a>
-  </p>
-{% endif %}
-
-{% if not current_user.is_authenticated %}
-  {# ── Guest Cart ── #}
-  {% if guest_cart and guest_cart|length > 0 %}
-  <h3>Your Cart (Guest)</h3>
-  <div class="alert alert-info">
-    <a href="{{ url_for('users.login') }}">Log in</a> or
-    <a href="{{ url_for('users.register') }}">register</a> to checkout.
+    {% if not current_user.is_authenticated %}
+      <form action="{{ url_for('carts.cart_page') }}" method="GET" class="poke-form-panel">
+        <label class="poke-caption" for="user_id">TRAINER ID</label>
+        <input class="form-control mb-3" type="number" name="user_id" min="0" value="{{ user_id if user_id is not none else '' }}">
+        <button class="btn-poke" type="submit">Open Bag</button>
+      </form>
+    {% endif %}
   </div>
-  <table class='table table-hover table-bordered container'>
-    <thead class="thead-dark">
-      <tr>
-        <th>Product</th>
-        <th>Seller</th>
-        <th>Quantity</th>
-        <th>Unit Price</th>
-        <th>Line Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in guest_cart %}
-        <tr>
-          <td><a href="{{ url_for('products.product_detail', product_id=item.product_id) }}">{{ item.product_name }}</a></td>
-          <td>{{ item.seller_name }}</td>
-          <td>{{ item.quantity }}</td>
-          <td>${{ "%.2f"|format(item.unit_price) }}</td>
-          <td>${{ "%.2f"|format(item.unit_price * item.quantity) }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-active">
-        <td colspan="4" class="text-right"><strong>Total:</strong></td>
-        <td><strong>${{ "%.2f"|format(guest_cart|sum(attribute='unit_price')) }}</strong></td>
-      </tr>
-    </tfoot>
-  </table>
-  {% else %}
-    <p>Your cart is empty. <a href="{{ url_for('users.login') }}">Log in</a> to see your saved cart.</p>
-  {% endif %}
-{% endif %}
 
-{% if user_id is not none and current_user.is_authenticated %}
-  {% set is_own_cart = current_user.is_authenticated and current_user.id == user_id %}
+  {% if user_id is not none %}
+    {% set is_own_cart = current_user.is_authenticated and current_user.id == user_id %}
 
-  {# ── Active Cart ── #}
-  {% if items and items|length > 0 %}
-  <h3>Active Cart</h3>
-  <table class='table table-hover table-bordered container'>
-    <thead class="thead-dark">
-      <tr>
-        <th>Product</th>
-        <th>Seller</th>
-        <th>Quantity</th>
-        <th>Unit Price</th>
-        <th>Line Total</th>
-        <th>Stock</th>
-        {% if is_own_cart %}
-        <th>Actions</th>
-        {% endif %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in items %}
-        <tr {% if item.out_of_stock %}class="table-danger"{% elif item.insufficient_stock %}class="table-warning"{% endif %}>
-          <td><a href="{{ url_for('products.product_detail', product_id=item.product_id) }}">{{ item.product_name }}</a></td>
-          <td>{{ item.seller_name }} (ID: {{ item.seller_id }})</td>
-          <td>
+    {% if items and items|length > 0 %}
+    <div class="poke-panel section-spacer">
+      <div class="poke-line mb-3">
+        <h3 class="poke-panel-title mb-0">{{ user.firstname }} {{ user.lastname }}'S BAG</h3>
+        <span class="poke-price">TOTAL: P${{ "%.2f"|format(total) }}</span>
+      </div>
+
+      <div class="poke-log-list">
+        {% for item in items %}
+        <div class="poke-log-row {% if loop.first %}featured{% endif %}">
+          <div class="poke-line mb-2">
+            <div>
+              {% if item.product_image_url %}
+                <img src="{{ item.product_image_url }}" alt="{{ item.product_name }}" style="width:72px; height:72px; object-fit:cover; border-radius:12px; border:1px solid var(--pk-border); margin-right:12px;">
+              {% endif %}
+              <a href="{{ url_for('products.product_detail', product_id=item.product_id) }}"><strong>{{ item.product_name }}</strong></a>
+              <div class="poke-caption">SHOPKEEPER: {{ item.seller_name }} | ID {{ item.seller_id }}</div>
+            </div>
+            <div class="text-right">
+              <div class="poke-price">P${{ "%.2f"|format(item.line_total) }}</div>
+              <div class="poke-caption">EACH P${{ "%.2f"|format(item.unit_price|float) }}</div>
+            </div>
+          </div>
+
+          <div class="poke-line">
             {% if is_own_cart %}
-            <form action="{{ url_for('carts.update_cart_item') }}" method="POST" style="display:inline-flex; align-items:center; gap:4px;">
+            <form action="{{ url_for('carts.update_cart_item') }}" method="POST" class="d-flex flex-wrap gap-2 align-items-center">
               <input type="hidden" name="product_id" value="{{ item.product_id }}">
               <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
-              <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.available_stock if item.available_stock and item.available_stock > 0 else 999 }}" style="width:70px;">
-              <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+              <label class="poke-caption mb-0" for="qty_{{ loop.index }}">QTY</label>
+              <input class="form-control" type="number" name="quantity" id="qty_{{ loop.index }}" value="{{ item.quantity }}" min="1" max="999" style="width:90px;">
+              <button type="submit" class="btn-poke-alt">Update</button>
             </form>
             {% else %}
-            {{ item.quantity }}
+            <span class="poke-caption">QTY: {{ item.quantity }}</span>
             {% endif %}
-          </td>
-          <td>
-            ${{ "%.2f"|format(item.unit_price|float) }}
-            {% if item.price_changed %}
-              <br>
-              <span class="badge badge-info">
-                Now ${{ "%.2f"|format(item.current_price|float) }}
-              </span>
-              {% if is_own_cart %}
-              <form action="{{ url_for('carts.update_price') }}" method="POST" style="display:inline;">
+
+            {% if is_own_cart %}
+            <div class="d-flex flex-wrap" style="gap:10px;">
+              <form action="{{ url_for('carts.save_cart_item_for_later') }}" method="POST">
                 <input type="hidden" name="product_id" value="{{ item.product_id }}">
                 <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
-                <button type="submit" class="btn btn-sm btn-outline-info">Update Price</button>
+                <button type="submit" class="btn-poke-alt">Save for later</button>
               </form>
-              {% endif %}
+              <form action="{{ url_for('carts.remove_cart_item') }}" method="POST">
+                <input type="hidden" name="product_id" value="{{ item.product_id }}">
+                <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
+                <button type="submit" class="btn-poke-danger">Toss Item</button>
+              </form>
+            </div>
             {% endif %}
-          </td>
-          <td>${{ "%.2f"|format(item.line_total) }}</td>
-          <td>
-            {% if item.out_of_stock %}
-              <span class="badge badge-danger">Out of Stock</span>
-            {% elif item.insufficient_stock %}
-              <span class="badge badge-warning">Only {{ item.available_stock }} left</span>
-            {% else %}
-              {{ item.available_stock }} available
-            {% endif %}
-          </td>
-          {% if is_own_cart %}
-          <td>
-            <form action="{{ url_for('carts.save_for_later') }}" method="POST" style="display:inline;">
-              <input type="hidden" name="product_id" value="{{ item.product_id }}">
-              <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
-              <button type="submit" class="btn btn-sm btn-outline-secondary">Save for Later</button>
-            </form>
-            <form action="{{ url_for('carts.remove_cart_item') }}" method="POST" style="display:inline;">
-              <input type="hidden" name="product_id" value="{{ item.product_id }}">
-              <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
-              <button type="submit" class="btn btn-sm btn-danger">Remove</button>
-            </form>
-          </td>
-          {% endif %}
-        </tr>
-      {% endfor %}
-    </tbody>
-    <tfoot>
-      <tr class="table-active">
-        <td colspan="5" class="text-right"><strong>Subtotal:</strong></td>
-        <td colspan="2"><strong>${{ "%.2f"|format(total) }}</strong></td>
-      </tr>
-      {% if coupon_code and coupon_discount > 0 %}
-      <tr class="table-success">
-        <td colspan="5" class="text-right">
-          <strong>Coupon ({{ coupon_code }}):</strong>
-        </td>
-        <td colspan="2">
-          <strong>-${{ "%.2f"|format(coupon_discount) }}</strong>
-          <form action="{{ url_for('carts.remove_coupon') }}" method="POST" style="display:inline;">
-            <button type="submit" class="btn btn-sm btn-outline-danger ml-2">Remove</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if is_own_cart %}
+    <div class="row section-spacer">
+      <div class="col-lg-7 mb-4 mb-lg-0">
+        <div class="poke-panel h-100">
+          <h3 class="poke-panel-title mb-2">Coupon Station</h3>
+          <p class="poke-subtitle">Try codes like <strong>POKE10</strong>, <strong>BALL5</strong>, or <strong>BERRY15</strong>.</p>
+          <form action="{{ url_for('carts.apply_coupon') }}" method="POST" class="row">
+            <div class="col-md-8 mb-3">
+              <input class="form-control" type="text" name="coupon_code" value="{{ coupon.code or '' }}" placeholder="Enter coupon code">
+            </div>
+            <div class="col-md-4 mb-3">
+              <button class="btn-poke w-100" type="submit">Apply</button>
+            </div>
           </form>
-        </td>
-      </tr>
-      <tr class="table-active">
-        <td colspan="5" class="text-right"><strong>Total:</strong></td>
-        <td colspan="2"><strong>${{ "%.2f"|format(total - coupon_discount) }}</strong></td>
-      </tr>
-      {% endif %}
-    </tfoot>
-  </table>
-
-  {% if is_own_cart %}
-  {# Coupon Input #}
-  <div class="container mb-3">
-    <form action="{{ url_for('carts.apply_coupon') }}" method="POST" class="form-inline">
-      <input type="text" name="coupon_code" class="form-control mr-2" placeholder="Enter coupon code"
-             value="{{ coupon_code }}" style="width:200px;">
-      <button type="submit" class="btn btn-outline-success">Apply Coupon</button>
-    </form>
-    {% if coupon_error %}
-      <small class="text-danger">{{ coupon_error }}</small>
-    {% endif %}
-  </div>
-
-  {# Checkout Button #}
-  <form action="{{ url_for('carts.checkout') }}" method="POST" class="container mb-4">
-    {% set final_total = total - coupon_discount if coupon_discount else total %}
-    <button type="submit" class="btn btn-success btn-lg"
-            {% if has_stock_issues %}disabled{% endif %}
-            onclick="return confirm('Place this order for ${{ '%.2f'|format(final_total) }}?')">
-      Place Order
-    </button>
-    {% if has_stock_issues %}
-      <p class="text-danger mt-2">Please resolve stock issues before checking out.</p>
-    {% endif %}
-  </form>
-  {% endif %}
-
-  {% else %}
-  <p>No active items in your cart.</p>
-  {% endif %}
-
-  {# ── Saved for Later ── #}
-  {% if saved_items and saved_items|length > 0 %}
-  <hr>
-  <h3>Saved for Later</h3>
-  <table class='table table-hover table-bordered container'>
-    <thead class="thead-light">
-      <tr>
-        <th>Product</th>
-        <th>Seller</th>
-        <th>Quantity</th>
-        <th>Unit Price</th>
-        <th>Line Total</th>
-        {% if is_own_cart %}
-        <th>Actions</th>
-        {% endif %}
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in saved_items %}
-        <tr>
-          <td><a href="{{ url_for('products.product_detail', product_id=item.product_id) }}">{{ item.product_name }}</a></td>
-          <td>{{ item.seller_name }} (ID: {{ item.seller_id }})</td>
-          <td>{{ item.quantity }}</td>
-          <td>
-            ${{ "%.2f"|format(item.unit_price|float) }}
-            {% if item.price_changed %}
-              <span class="badge badge-info">Now ${{ "%.2f"|format(item.current_price|float) }}</span>
-            {% endif %}
-          </td>
-          <td>${{ "%.2f"|format(item.line_total) }}</td>
-          {% if is_own_cart %}
-          <td>
-            <form action="{{ url_for('carts.move_to_cart') }}" method="POST" style="display:inline;">
-              <input type="hidden" name="product_id" value="{{ item.product_id }}">
-              <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
-              <button type="submit" class="btn btn-sm btn-outline-primary">Move to Cart</button>
+          {% if coupon.code %}
+          <div class="poke-log-row">
+            <div class="poke-line">
+              <div>
+                <strong>{{ coupon.code }}</strong>
+                <div class="poke-caption">{{ coupon.label }}</div>
+                {% if coupon.message %}
+                  <div class="poke-caption">{{ coupon.message }}</div>
+                {% endif %}
+              </div>
+              <div class="text-right">
+                <div class="poke-price" style="font-size:1.2rem;">-P${{ "%.2f"|format(coupon.discount) }}</div>
+                <div class="{% if coupon.valid %}poke-status-good{% else %}poke-status-bad{% endif %}">
+                  {% if coupon.valid %}Applied{% else %}Pending{% endif %}
+                </div>
+              </div>
+            </div>
+            <form action="{{ url_for('carts.remove_coupon') }}" method="POST" class="mt-2">
+              <button class="btn-poke-alt" type="submit">Remove coupon</button>
             </form>
-            <form action="{{ url_for('carts.remove_cart_item') }}" method="POST" style="display:inline;">
-              <input type="hidden" name="product_id" value="{{ item.product_id }}">
-              <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
-              <button type="submit" class="btn btn-sm btn-danger">Remove</button>
-            </form>
-          </td>
+          </div>
           {% endif %}
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% endif %}
-{% endif %}
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="poke-panel h-100">
+          <div class="poke-line">
+            <div>
+              <h3 class="poke-panel-title mb-2">READY TO CHECK OUT?</h3>
+              <p class="poke-subtitle mb-0">Subtotal P${{ "%.2f"|format(total) }}{% if coupon.discount %}, discount P${{ "%.2f"|format(coupon.discount) }}{% endif %}.</p>
+            </div>
+            <div class="text-right">
+              <div class="poke-caption">FINAL TOTAL</div>
+              <div class="poke-price">P${{ "%.2f"|format(final_total) }}</div>
+            </div>
+          </div>
+          <form action="{{ url_for('carts.checkout') }}" method="POST" class="mt-3">
+            <button type="submit" class="btn-poke w-100"
+                    onclick="return confirm('Complete this checkout for P${{ '%.2f'|format(final_total) }}?')">
+              Confirm Purchase
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endif %}
 
+    {% else %}
+    <div class="poke-panel text-center">
+      <h3 class="poke-panel-title">EMPTY BAG</h3>
+      <p class="poke-subtitle mb-0">NO ITEMS ARE STORED IN {{ user.firstname }} {{ user.lastname }}'S BAG RIGHT NOW.</p>
+    </div>
+    {% endif %}
+
+    {% if is_own_cart and saved_items %}
+    <div class="poke-panel section-spacer mt-4">
+      <div class="poke-line mb-3">
+        <h3 class="poke-panel-title mb-0">SAVE FOR LATER</h3>
+        <span class="poke-caption">{{ saved_items|length }} item{{ 's' if saved_items|length != 1 else '' }}</span>
+      </div>
+      <div class="poke-log-list">
+        {% for item in saved_items %}
+        <div class="poke-log-row">
+          <div class="poke-line">
+            <div>
+              <a href="{{ url_for('products.product_detail', product_id=item.product_id) }}"><strong>{{ item.product_name }}</strong></a>
+              <div class="poke-caption">{{ item.seller_name }}</div>
+              <div class="poke-caption">Saved quantity {{ item.quantity }} | Stock left {{ item.stock_quantity }}</div>
+            </div>
+            <div class="text-right">
+              <div class="poke-price" style="font-size:1.2rem;">P${{ "%.2f"|format(item.unit_price) }}</div>
+              <div class="{% if item.available and item.stock_quantity > 0 %}poke-status-good{% else %}poke-status-bad{% endif %}">
+                {% if item.available and item.stock_quantity > 0 %}Ready to restore{% else %}Unavailable{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap" style="gap:10px;">
+            <form action="{{ url_for('carts.restore_saved_item') }}" method="POST">
+              <input type="hidden" name="product_id" value="{{ item.product_id }}">
+              <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
+              <button type="submit" class="btn-poke" {% if not item.available or item.stock_quantity <= 0 %}disabled{% endif %}>Move to bag</button>
+            </form>
+            <form action="{{ url_for('carts.remove_saved_item') }}" method="POST">
+              <input type="hidden" name="product_id" value="{{ item.product_id }}">
+              <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
+              <button type="submit" class="btn-poke-alt">Remove saved item</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  {% endif %}
+</div>
 {% endblock %}
