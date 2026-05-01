@@ -47,10 +47,10 @@ SELECT pg_catalog.setval('public.sellerreviews_id_seq',
                          false);
 
 -- CART ITEMS
-\COPY cart_items(user_id, product_id, seller_id, quantity, unit_price) FROM 'CartItems.csv' WITH DELIMITER ',' NULL '' CSV;
+\COPY cart_items(user_id, product_id, seller_id, quantity, unit_price, saved) FROM 'CartItems.csv' WITH DELIMITER ',' NULL '' CSV;
 
 -- ORDERS
-\COPY orders(id, user_id, total_amount, num_items, created_at, fulfilled) FROM 'Orders.csv' WITH DELIMITER ',' NULL '' CSV;
+\COPY orders(id, user_id, total_amount, num_items, created_at, fulfilled, cancelled) FROM 'Orders.csv' WITH DELIMITER ',' NULL '' CSV;
 SELECT pg_catalog.setval('public.orders_id_seq',
                          (SELECT MAX(id)+1 FROM orders),
                          false);
@@ -59,4 +59,13 @@ SELECT pg_catalog.setval('public.orders_id_seq',
 \COPY order_items(id, order_id, product_id, seller_id, quantity, unit_price, fulfilled, fulfilled_at) FROM 'OrderItems.csv' WITH DELIMITER ',' NULL '' CSV;
 SELECT pg_catalog.setval('public.order_items_id_seq',
                          (SELECT MAX(id)+1 FROM order_items),
+                         false);
+
+-- WISHLIST
+\COPY wishlist(user_id, product_id, added_at) FROM 'Wishlist.csv' WITH DELIMITER ',' NULL '' CSV;
+
+-- COUPONS
+\COPY coupons(id, code, discount_type, discount_value, min_order_amount, max_uses, expiry_date, applicable_product_id) FROM 'Coupons.csv' WITH DELIMITER ',' NULL '' CSV;
+SELECT pg_catalog.setval('public.coupons_id_seq',
+                         (SELECT MAX(id)+1 FROM coupons),
                          false);

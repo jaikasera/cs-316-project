@@ -4,7 +4,10 @@
 <br><br>
 
 <h2>Order #{{ order.order_id }}</h2>
-<p><a href="{{ url_for('carts.order_history') }}">Back to Orders</a></p>
+<p>
+  <a href="{{ url_for('carts.order_history') }}">Back to Orders</a>
+  | <a href="{{ url_for('carts.order_receipt', order_id=order.order_id) }}">Print Receipt</a>
+</p>
 
 <div class="container mb-4">
   <table class="table table-sm" style="max-width: 400px;">
@@ -14,7 +17,9 @@
     <tr>
       <th>Status</th>
       <td>
-        {% if order.fulfilled %}
+        {% if order.cancelled %}
+          <span class="badge badge-secondary">Cancelled</span>
+        {% elif order.fulfilled %}
           <span class="badge badge-success">Fulfilled</span>
         {% else %}
           <span class="badge badge-warning">Pending</span>
@@ -22,6 +27,24 @@
       </td>
     </tr>
   </table>
+
+  {# Action buttons #}
+  <div class="mt-2">
+    {% if not order.cancelled %}
+    <form action="{{ url_for('carts.reorder', order_id=order.order_id) }}" method="POST" style="display:inline;">
+      <button type="submit" class="btn btn-outline-primary">Buy Again</button>
+    </form>
+    {% endif %}
+
+    {% if not order.fulfilled and not order.cancelled %}
+    <form action="{{ url_for('carts.cancel_order', order_id=order.order_id) }}" method="POST" style="display:inline;">
+      <button type="submit" class="btn btn-outline-danger"
+              onclick="return confirm('Cancel this order and receive a full refund?')">
+        Cancel Order
+      </button>
+    </form>
+    {% endif %}
+  </div>
 </div>
 
 <h3>Line Items</h3>
@@ -45,7 +68,9 @@
         <td>${{ "%.2f"|format(item.unit_price|float) }}</td>
         <td>${{ "%.2f"|format(item.line_total) }}</td>
         <td>
-          {% if item.fulfilled %}
+          {% if order.cancelled %}
+            <span class="badge badge-secondary">Cancelled</span>
+          {% elif item.fulfilled %}
             <span class="badge badge-success">Fulfilled</span>
             <br><small>{{ item.fulfilled_at.strftime('%Y-%m-%d %H:%M') if item.fulfilled_at else '' }}</small>
           {% else %}

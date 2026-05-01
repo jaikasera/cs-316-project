@@ -821,6 +821,7 @@ def gen_order_items(num_orders, user_profiles, product_listings, stocked_product
                 total_quantity,
                 created_at,
                 str(all_fulfilled).lower(),
+                'false',
             ))
 
         print(f'{item_id - 1} generated')
@@ -901,43 +902,52 @@ def gen_cart_items(num_cart_items, user_profiles, product_listings, stocked_prod
             used_triples.add(triple)
             quantity = weighted_choice([1, 2, 3, 4], [72, 21, 5, 2])
             quantity = min(quantity, listing['quantity'])
-            writer.writerow([user['id'], product_id, listing['seller_id'], quantity, money(listing['price'])])
+            saved = 'true' if random.random() < 0.15 else 'false'
+            writer.writerow([user['id'], product_id, listing['seller_id'], quantity, money(listing['price']), saved])
             item_count += 1
             if item_count % 250 == 0:
                 print(f'{item_count}', end=' ', flush=True)
         print(f'{item_count} generated')
 
 
-def gen_tags_and_product_tags(products):
-    tag_to_id = {}
-    product_tag_rows = []
-
-    for product in products:
-        for tag_name in product.get('tags', []):
-            slug = slugify(tag_name)
-            if slug not in tag_to_id:
-                tag_to_id[slug] = {
-                    'id': len(tag_to_id) + 1,
-                    'display_name': tag_name.title() if '-' not in tag_name else tag_name.replace('-', ' ').title(),
-                    'slug': slug,
-                    'created_by': '',
-                    'is_active': 'true',
-                }
-            product_tag_rows.append((product['id'], tag_to_id[slug]['id']))
-
-    with open(BASE / 'Tags.csv', 'w') as f:
+def gen_wishlist(user_profiles, available_product_ids, products_by_category, popularity_weights, num_items=800):
+    used_pairs = set()
+    with open(BASE / 'Wishlist.csv', 'w') as f:
         writer = get_csv_writer(f)
-        print('Tags...', end=' ', flush=True)
-        for tag in sorted(tag_to_id.values(), key=lambda value: value['display_name']):
-            writer.writerow([tag['id'], tag['display_name'], tag['slug'], tag['created_by'], tag['is_active']])
-        print(f'{len(tag_to_id)} generated')
+        print('Wishlist...', end=' ', flush=True)
+        count = 0
+        attempts = 0
+        while count < num_items and attempts < num_items * 20:
+            attempts += 1
+            user = weighted_choice(user_profiles, [p['cart_affinity'] for p in user_profiles])
+            product_id = select_product_for_user(user, products_by_category, available_product_ids, popularity_weights)
+            pair = (user['id'], product_id)
+            if pair in used_pairs:
+                continue
+            used_pairs.add(pair)
+            added_at = random_timestamp(days_back=200)
+            writer.writerow([user['id'], product_id, added_at])
+            count += 1
+        print(f'{count} generated')
 
-    with open(BASE / 'ProductTags.csv', 'w') as f:
+
+def gen_coupons():
+    coupons = [
+        (1, 'WELCOME10', 'percentage', '10.00', '0.00', 500, '', ''),
+        (2, 'FLAT5OFF', 'flat', '5.00', '25.00', 200, '', ''),
+        (3, 'SAVE20', 'percentage', '20.00', '50.00', 100, '', ''),
+        (4, 'FREESHIP', 'flat', '3.99', '0.00', 1000, '', ''),
+        (5, 'BIGORDER15', 'percentage', '15.00', '100.00', 50, '', ''),
+        (6, 'SUMMER25', 'percentage', '25.00', '75.00', 150, '', ''),
+        (7, 'FLAT10', 'flat', '10.00', '40.00', 300, '', ''),
+        (8, 'VIP30', 'percentage', '30.00', '200.00', 20, '', ''),
+    ]
+    with open(BASE / 'Coupons.csv', 'w') as f:
         writer = get_csv_writer(f)
-        print('ProductTags...', end=' ', flush=True)
-        for product_id, tag_id in product_tag_rows:
-            writer.writerow([product_id, tag_id])
-        print(f'{len(product_tag_rows)} generated')
+        print('Coupons...', end=' ', flush=True)
+        for coupon in coupons:
+            writer.writerow(coupon)
+        print(f'{len(coupons)} generated')
 
 
 def main():
@@ -961,6 +971,8 @@ def main():
     gen_orders(order_summaries)
     gen_seller_reviews(NUM_SELLER_REVIEWS, user_profiles, seller_listing_count, seller_quality, seller_sales)
     gen_cart_items(NUM_CART_ITEMS, user_profiles, product_listings, stocked_product_ids, products_by_category, popularity_weights)
+    gen_wishlist(user_profiles, available_product_ids, products_by_category, popularity_weights)
+    gen_coupons()
 
 
 if __name__ == '__main__':

@@ -1,44 +1,60 @@
 {% extends "base.html" %}
+
 {% block content %}
+<br><br>
 
-<div class="poke-panel section-spacer">
-  <div class="poke-line">
-    <div>
-      <h2 class="poke-panel-title mb-2">Wish List</h2>
-      <p class="poke-subtitle mb-0">Items you saved for a future shopping run.</p>
-    </div>
-    <a class="btn-poke-alt" href="{{ url_for('products.browse_products') }}">Browse More</a>
-  </div>
-</div>
+<h2>My Wishlist</h2>
+<p><a href="{{ url_for('carts.cart_page') }}">Back to Cart</a></p>
 
-{% if products %}
-<div class="browse-grid">
-  {% for product in products %}
-  <div class="product-tile">
-    {% if product.image_url %}
-      <img class="product-thumb" src="{{ product.image_url }}" alt="{{ product.name }}">
-    {% else %}
-      <div class="product-thumb poke-image-frame">ITEM ART</div>
-    {% endif %}
-    <div class="tile-topline">
-      <div class="tile-title">{{ product.name }}</div>
-      <form action="{{ url_for('products.toggle_product_wishlist', product_id=product.id) }}" method="POST">
-        <input type="hidden" name="next" value="{{ request.path }}">
-        <button type="submit" class="wish-toggle {% if product.id in wishlist_ids %}is-active{% endif %}" aria-label="Remove {{ product.name }}">★</button>
-      </form>
-    </div>
-    <div class="poke-caption">{{ product.category_name if product.category_name else 'General Merchandise' }}</div>
-    <div class="poke-price">P${{ product.min_price if product.min_price is not none else 'N/A' }}</div>
-    <p class="poke-subtitle mb-1">{{ product.description[:120] }}{% if product.description|length > 120 %}...{% endif %}</p>
-    <a class="btn-poke mt-auto" href="{{ url_for('products.product_detail', product_id=product.id) }}">View Item</a>
-  </div>
-  {% endfor %}
-</div>
+{% if items and items|length > 0 %}
+<table class='table table-hover table-bordered container'>
+  <thead class="thead-dark">
+    <tr>
+      <th>Product</th>
+      <th>Category</th>
+      <th>Lowest Price</th>
+      <th>Availability</th>
+      <th>Added</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+      <tr>
+        <td><a href="{{ url_for('products.product_detail', product_id=item.product_id) }}">{{ item.product_name }}</a></td>
+        <td>{{ item.category_name }}</td>
+        <td>
+          {% if item.lowest_price %}
+            ${{ "%.2f"|format(item.lowest_price|float) }}
+          {% else %}
+            N/A
+          {% endif %}
+        </td>
+        <td>
+          {% if item.in_stock %}
+            <span class="badge badge-success">In Stock ({{ item.total_stock }})</span>
+          {% else %}
+            <span class="badge badge-danger">Out of Stock</span>
+          {% endif %}
+        </td>
+        <td>{{ item.added_at.strftime('%Y-%m-%d') }}</td>
+        <td>
+          {% if item.in_stock %}
+          <a href="{{ url_for('products.product_detail', product_id=item.product_id) }}" class="btn btn-sm btn-outline-primary">
+            Add to Cart
+          </a>
+          {% endif %}
+          <form action="{{ url_for('carts.wishlist_remove') }}" method="POST" style="display:inline;">
+            <input type="hidden" name="product_id" value="{{ item.product_id }}">
+            <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% else %}
-<div class="poke-panel text-center">
-  <h3 class="section-title">Your wish list is empty</h3>
-  <p class="poke-subtitle mb-0">Tap the star on any product card to save it here for later.</p>
-</div>
+<p>Your wishlist is empty. Browse <a href="{{ url_for('products.browse_products') }}">products</a> to add items.</p>
 {% endif %}
 
 {% endblock %}

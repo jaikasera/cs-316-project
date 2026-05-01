@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br><br>
+
+<h2>Spending Analytics</h2>
+<p><a href="{{ url_for('carts.order_history') }}">Back to Orders</a></p>
+
+{# ── Summary Cards ── #}
+<div class="container mb-4">
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Total Spent</h5>
+          <p class="card-text" style="font-size:1.8em; font-weight:bold;">${{ "%.2f"|format(summary.total_spent) }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Orders Placed</h5>
+          <p class="card-text" style="font-size:1.8em; font-weight:bold;">{{ summary.order_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card text-center">
+        <div class="card-body">
+          <h5 class="card-title">Avg Order Value</h5>
+          <p class="card-text" style="font-size:1.8em; font-weight:bold;">${{ "%.2f"|format(summary.avg_order_value) }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── Monthly Spending ── #}
+{% if monthly %}
+<div class="container mb-4">
+  <h4>Monthly Spending (Last 12 Months)</h4>
+  <table class="table table-sm table-bordered" style="max-width:500px;">
+    <thead class="thead-light">
+      <tr><th>Month</th><th>Orders</th><th>Amount</th></tr>
+    </thead>
+    <tbody>
+      {% for m in monthly %}
+      <tr>
+        <td>{{ m.month }}</td>
+        <td>{{ m.order_count }}</td>
+        <td>${{ "%.2f"|format(m.total_spent) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<div class="container">
+  <div class="row">
+    {# ── Top Products ── #}
+    <div class="col-md-6 mb-4">
+      <h4>Most Purchased Products</h4>
+      {% if top_products %}
+      <table class="table table-sm table-bordered">
+        <thead class="thead-light">
+          <tr><th>Product</th><th>Qty</th><th>Spent</th></tr>
+        </thead>
+        <tbody>
+          {% for p in top_products %}
+          <tr>
+            <td><a href="{{ url_for('products.product_detail', product_id=p.product_id) }}">{{ p.name }}</a></td>
+            <td>{{ p.total_qty }}</td>
+            <td>${{ "%.2f"|format(p.total_spent) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No purchase data yet.</p>
+      {% endif %}
+    </div>
+
+    {# ── Top Sellers ── #}
+    <div class="col-md-6 mb-4">
+      <h4>Top Sellers</h4>
+      {% if top_sellers %}
+      <table class="table table-sm table-bordered">
+        <thead class="thead-light">
+          <tr><th>Seller</th><th>Items</th><th>Spent</th></tr>
+        </thead>
+        <tbody>
+          {% for s in top_sellers %}
+          <tr>
+            <td>{{ s.name }}</td>
+            <td>{{ s.total_qty }}</td>
+            <td>${{ "%.2f"|format(s.total_spent) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p>No purchase data yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# ── Category Breakdown ── #}
+{% if categories %}
+<div class="container mb-4">
+  <h4>Spending by Category</h4>
+  <table class="table table-sm table-bordered" style="max-width:500px;">
+    <thead class="thead-light">
+      <tr><th>Category</th><th>Items</th><th>Spent</th></tr>
+    </thead>
+    <tbody>
+      {% for c in categories %}
+      <tr>
+        <td>{{ c.category }}</td>
+        <td>{{ c.total_qty }}</td>
+        <td>${{ "%.2f"|format(c.total_spent) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

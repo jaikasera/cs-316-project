@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Receipt - Order #{{ order.order_id }}</title>
+  <link href="//maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { font-family: "Lato", sans-serif; padding: 30px; }
+    .receipt-header { border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+    .receipt-header h1 { font-size: 1.8em; margin: 0; }
+    .receipt-meta { margin-bottom: 25px; }
+    .receipt-meta td { padding: 3px 10px; }
+    .receipt-total { font-size: 1.2em; font-weight: bold; }
+    @media print {
+      .no-print { display: none !important; }
+      body { padding: 10px; }
+      a { text-decoration: none; color: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print mb-3">
+    <button onclick="window.print()" class="btn btn-primary">Print Receipt</button>
+    <a href="{{ url_for('carts.order_detail', order_id=order.order_id) }}" class="btn btn-secondary ml-2">Back to Order</a>
+  </div>
+
+  <div class="receipt-header">
+    <h1>Mini Amazon</h1>
+    <p>Order Receipt</p>
+  </div>
+
+  <div class="receipt-meta">
+    <table>
+      <tr><td><strong>Order #:</strong></td><td>{{ order.order_id }}</td></tr>
+      <tr><td><strong>Date:</strong></td><td>{{ order.created_at.strftime('%B %d, %Y at %I:%M %p') }}</td></tr>
+      <tr><td><strong>Customer:</strong></td><td>{{ user.firstname }} {{ user.lastname }}</td></tr>
+      <tr><td><strong>Email:</strong></td><td>{{ user.email }}</td></tr>
+      <tr><td><strong>Address:</strong></td><td>{{ user.address }}</td></tr>
+      <tr><td><strong>Status:</strong></td>
+        <td>
+          {% if order.cancelled %}Cancelled
+          {% elif order.fulfilled %}Fulfilled
+          {% else %}Pending
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <h4>Items</h4>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Seller</th>
+        <th class="text-right">Qty</th>
+        <th class="text-right">Unit Price</th>
+        <th class="text-right">Line Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in line_items %}
+      <tr>
+        <td>{{ item.product_name }}</td>
+        <td>{{ item.seller_name }}</td>
+        <td class="text-right">{{ item.quantity }}</td>
+        <td class="text-right">${{ "%.2f"|format(item.unit_price|float) }}</td>
+        <td class="text-right">${{ "%.2f"|format(item.line_total) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="4" class="text-right"><strong>Total:</strong></td>
+        <td class="text-right receipt-total">${{ "%.2f"|format(order.total_amount|float) }}</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <hr>
+  <p class="text-muted text-center">Thank you for shopping with Mini Amazon!</p>
+</body>
+</html>
