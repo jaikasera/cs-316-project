@@ -1,43 +1,386 @@
 {% extends "base.html" %}
 
 {% block content %}
-<br><br>
+<style>
+  .top-page {
+    display: grid;
+    gap: 22px;
+  }
 
-<h2>Top {{k}} Most Expensive Products</h2>
+  .top-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) 320px;
+    gap: 22px;
+    align-items: stretch;
+    padding: 28px;
+    background:
+      radial-gradient(circle at top right, rgba(255, 212, 59, 0.24), transparent 28%),
+      linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(233, 246, 255, 0.96) 46%, rgba(227, 255, 207, 0.90) 100%);
+  }
 
-<form action="{{ url_for('products.top_k_products_page') }}" method="GET">
-    <label for="k">Enter k:</label>
-    <input type="number" name="k" min="1" value="{{k}}">
-    <input type="submit" value="Show Products">
-</form>
+  .top-hero-copy {
+    display: grid;
+    gap: 14px;
+    align-content: center;
+  }
 
-<br>
+  .top-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(13, 102, 207, 0.10);
+    color: var(--pk-blue-deep);
+    font-weight: 900;
+    width: fit-content;
+  }
 
-{% if products %}
-<table class='table table-hover table-bordered container'>
-    <thead class="thead-dark">
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Highest Seller Price</th>
-            <th>Lowest Seller Price</th>
-            <th>Available</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for product in products %}
-        <tr>
-            <td>{{ product.id }}</td>
-            <td>{{ product.name }}</td>
-            <td>${{ product.top_price }}</td>
-            <td>${{ product.min_price }}</td>
-            <td>{{ product.available }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p>No products found.</p>
-{% endif %}
+  .top-hero-copy h1 {
+    margin: 0;
+    font-size: clamp(2.6rem, 4vw, 4.4rem);
+    line-height: 0.92;
+    color: #114283;
+  }
 
+  .top-hero-copy p {
+    margin: 0;
+    max-width: 780px;
+    font-size: 1.12rem;
+    color: var(--pk-muted);
+  }
+
+  .top-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .top-k-form {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px;
+    background: rgba(255,255,255,0.78);
+    border: 1px solid rgba(203, 226, 246, 0.92);
+    border-radius: 18px;
+    box-shadow: var(--pk-shadow-soft);
+  }
+
+  .top-k-form label {
+    margin: 0;
+    font-weight: 900;
+    color: var(--pk-blue-deep);
+  }
+
+  .top-k-form input[type="number"] {
+    width: 92px;
+    height: 48px;
+    border-radius: 14px;
+    border: 1px solid var(--pk-border);
+    padding: 0 14px;
+    font-weight: 800;
+    color: var(--pk-ink);
+    background: #fff;
+  }
+
+  .top-side-note {
+    display: grid;
+    gap: 14px;
+    padding: 20px;
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(13, 102, 207, 0.94) 0%, rgba(8, 73, 154, 0.96) 100%);
+    color: white;
+    box-shadow: 0 16px 28px rgba(8, 52, 116, 0.22);
+  }
+
+  .top-side-note h3 {
+    margin: 0;
+    font-size: 1.8rem;
+    line-height: 1;
+  }
+
+  .top-side-note p,
+  .top-side-note ul {
+    margin: 0;
+    color: rgba(255,255,255,0.92);
+  }
+
+  .top-side-note ul {
+    padding-left: 18px;
+  }
+
+  .top-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 18px;
+  }
+
+  .top-card {
+    position: relative;
+    padding: 22px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(245, 251, 255, 0.98) 100%);
+  }
+
+  .top-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 22px;
+    background:
+      radial-gradient(circle at top right, rgba(255, 214, 59, 0.22), transparent 28%),
+      radial-gradient(circle at bottom left, rgba(121, 203, 59, 0.10), transparent 26%);
+    pointer-events: none;
+  }
+
+  .top-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .top-rank-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .top-rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, #fff3af 0%, #ffd94f 100%);
+    color: #8d5600;
+    font-family: 'Baloo 2', cursive;
+    font-size: 1.8rem;
+    font-weight: 900;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,0.08);
+  }
+
+  .top-availability {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 0.92rem;
+    font-weight: 900;
+  }
+
+  .top-availability.available {
+    background: rgba(121, 203, 59, 0.18);
+    color: #327309;
+  }
+
+  .top-availability.unavailable {
+    background: rgba(255, 87, 75, 0.15);
+    color: #af322a;
+  }
+
+  .top-card h3 {
+    margin: 0 0 8px;
+    color: var(--pk-blue-night);
+    font-size: 1.55rem;
+    line-height: 1;
+  }
+
+  .top-card-id {
+    margin: 0 0 18px;
+    color: var(--pk-muted);
+    font-size: 0.98rem;
+    font-weight: 700;
+  }
+
+  .top-price-stack {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .top-price-chip {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(238, 247, 255, 0.9);
+    border: 1px solid rgba(203, 226, 246, 0.9);
+  }
+
+  .top-price-chip strong {
+    color: var(--pk-blue-deep);
+  }
+
+  .top-price-chip span:last-child {
+    font-size: 1.28rem;
+    font-weight: 900;
+    color: var(--pk-ink);
+  }
+
+  .top-spread {
+    margin-bottom: 18px;
+  }
+
+  .top-spread-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: var(--pk-muted);
+    font-size: 0.94rem;
+    font-weight: 800;
+  }
+
+  .top-spread-bar {
+    height: 12px;
+    border-radius: 999px;
+    background: rgba(203, 226, 246, 0.82);
+    overflow: hidden;
+  }
+
+  .top-spread-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #7ccf3a 0%, #ffd43b 52%, #ff6a59 100%);
+  }
+
+  .top-card-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .top-empty {
+    padding: 28px;
+    text-align: center;
+  }
+
+  @media (max-width: 1100px) {
+    .top-hero {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .top-hero {
+      padding: 20px;
+    }
+
+    .top-card {
+      padding: 18px;
+    }
+
+    .top-rank-badge {
+      min-width: 54px;
+      height: 54px;
+      font-size: 1.55rem;
+    }
+
+    .top-k-form {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+  }
+</style>
+
+<div class="top-page">
+  <section class="poke-card top-hero">
+    <div class="top-hero-copy">
+      <span class="top-kicker">💎 Luxury Shelf Picks</span>
+      <h1>Top {{ k }} Most Expensive Finds</h1>
+      <p>
+        A curated look at the priciest listings in the marketplace, with both the highest ask and the best currently in-stock floor price side by side.
+      </p>
+
+      <div class="top-controls">
+        <form class="top-k-form" action="{{ url_for('products.top_k_products_page') }}" method="GET">
+          <label for="k">Show top</label>
+          <input id="k" type="number" name="k" min="1" max="30" value="{{ k }}">
+          <button type="submit" class="btn-poke">Refresh List</button>
+        </form>
+        <a class="btn-poke-alt" href="{{ url_for('products.browse_products', sort_by='price_desc') }}">Browse High-End Items</a>
+      </div>
+    </div>
+
+    <aside class="top-side-note">
+      <h3>Cute guide</h3>
+      <p>This page highlights products with the biggest seller price ceilings, which is great for spotting premium inventory and collector-style listings.</p>
+      <ul>
+        <li>Higher spread means sellers disagree more on value.</li>
+        <li>The lower chip shows the best live floor price in stock.</li>
+        <li>Use it as a quick luxury or rarity tracker.</li>
+      </ul>
+    </aside>
+  </section>
+
+  {% if products %}
+    <section class="top-grid">
+      {% for product in products %}
+        {% set product_id = product[0] %}
+        {% set product_name = product[1] %}
+        {% set top_price = product[2]|float %}
+        {% set min_price = product[3]|float if product[3] is not none else none %}
+        {% set available = product[4] %}
+        {% set spread_ratio = ((top_price - min_price) / top_price * 100) if min_price is not none and top_price else 0 %}
+        <article class="poke-card top-card">
+          <div class="top-rank-row">
+            <span class="top-rank-badge">#{{ loop.index }}</span>
+            <span class="top-availability {{ 'available' if available else 'unavailable' }}">
+              {{ '● Available' if available else '● Hidden' }}
+            </span>
+          </div>
+
+          <h3>{{ product_name }}</h3>
+          <p class="top-card-id">Product #{{ product_id }}</p>
+
+          <div class="top-price-stack">
+            <div class="top-price-chip">
+              <strong>Highest seller ask</strong>
+              <span>P${{ '%.2f'|format(top_price) }}</span>
+            </div>
+            <div class="top-price-chip">
+              <strong>Best live floor</strong>
+              <span>
+                {% if min_price is not none %}
+                  P${{ '%.2f'|format(min_price) }}
+                {% else %}
+                  No stock
+                {% endif %}
+              </span>
+            </div>
+          </div>
+
+          <div class="top-spread">
+            <div class="top-spread-head">
+              <span>Price spread</span>
+              <span>{{ '%.0f'|format(spread_ratio) }}%</span>
+            </div>
+            <div class="top-spread-bar">
+              <div class="top-spread-fill" style="width: {{ [spread_ratio, 100]|min }}%;"></div>
+            </div>
+          </div>
+
+          <div class="top-card-actions">
+            <a class="btn-poke" href="{{ url_for('products.product_detail', product_id=product_id) }}">View Item</a>
+            <a class="btn-poke-alt" href="{{ url_for('products.browse_products', sort_by='price_desc') }}">Compare More</a>
+          </div>
+        </article>
+      {% endfor %}
+    </section>
+  {% else %}
+    <section class="poke-card top-empty">
+      <h3 class="section-title mb-2">No top products yet</h3>
+      <p class="mb-3">Once inventory listings are loaded, the premium shelf will populate here.</p>
+      <a class="btn-poke" href="{{ url_for('products.browse_products') }}">Browse Products</a>
+    </section>
+  {% endif %}
+</div>
 {% endblock %}

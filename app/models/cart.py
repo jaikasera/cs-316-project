@@ -9,6 +9,8 @@ class CartItem:
         self.product_id = product_id
         self.seller_id = seller_id
         self.product_name = product_name
+        self.product_image_url = product_image_url
+        self.product_available = product_available
         self.seller_name = f"{seller_firstname} {seller_lastname}"
         self.quantity = quantity
         self.unit_price = unit_price
@@ -37,6 +39,8 @@ class CartItem:
         rows = app.db.execute('''
 SELECT c.user_id, c.product_id, c.seller_id,
        p.name AS product_name,
+       p.image_url,
+       p.available,
        s.firstname AS seller_firstname,
        s.lastname AS seller_lastname,
        c.quantity, c.unit_price, c.added_at,
@@ -252,7 +256,9 @@ FOR UPDATE
                 cart = [{'product_id': r[0], 'seller_id': r[1],
                          'quantity': r[2], 'unit_price': float(r[3])} for r in rows]
 
-                total_amount = sum(item['unit_price'] * item['quantity'] for item in cart)
+                subtotal = sum(item['unit_price'] * item['quantity'] for item in cart)
+                discount_amount = max(0.0, min(float(discount_amount or 0), subtotal))
+                total_amount = subtotal - discount_amount
                 num_items = sum(item['quantity'] for item in cart)
 
                 # Validate and apply coupon if provided

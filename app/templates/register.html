@@ -1,54 +1,64 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div class="auth-shell">
+  <div class="poke-form-panel section-spacer">
+    <h1 class="poke-panel-title">REGISTER TRAINER</h1>
+    <p class="poke-subtitle">SET UP YOUR TRAINER CARD AND START SHOPPING AT THE POKE MART.</p>
 
-<h1>Register</h1>
-
-<form action="" method="post">
-  {{ form.hidden_tag() }}
-  <p>
-    {{ form.firstname.label }}<br/>
-    {{ form.firstname(size=32) }}<br/>
-    {% for error in form.firstname.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.lastname.label }}<br/>
-    {{ form.lastname(size=32) }}<br/>
-    {% for error in form.lastname.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.email.label }} (Could be fake email address)<br/>
-    {{ form.email(size=64) }}<br/>
-    {% for error in form.email.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.password.label }}<br/>
-    {{ form.password(size=32) }}<br/>
-    {% for error in form.password.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.password2.label }}<br/>
-    {{ form.password2(size=32) }}<br/>
-    {% for error in form.password2.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>
-    {{ form.address.label }}<br/>
-    {{ form.address(size=64) }}<br/>
-    {% for error in form.address.errors %}
-    <span style="color: red;">[{{ error }}]</span>
-    {% endfor %}
-  </p>
-  <p>{{ form.submit() }}</p>
-</form>
-
+    <form action="" method="post">
+      {{ form.hidden_tag() }}
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.firstname.label(class_='poke-caption') }}
+          {{ form.firstname(class_='form-control') }}
+          {% if form.firstname.errors %}
+          <ul class="error-list">{% for error in form.firstname.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.lastname.label(class_='poke-caption') }}
+          {{ form.lastname(class_='form-control') }}
+          {% if form.lastname.errors %}
+          <ul class="error-list">{% for error in form.lastname.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+      </div>
+      <div class="mb-3">
+        {{ form.email.label(class_='poke-caption') }}
+        {{ form.email(class_='form-control') }}
+        {% if form.email.errors %}
+        <ul class="error-list">{% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.password.label(class_='poke-caption') }}
+          {{ form.password(class_='form-control') }}
+          {% if form.password.errors %}
+          <ul class="error-list">{% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.password2.label(class_='poke-caption') }}
+          {{ form.password2(class_='form-control') }}
+          {% if form.password2.errors %}
+          <ul class="error-list">{% for error in form.password2.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+      </div>
+      <div class="mb-4">
+        {{ form.address.label(class_='poke-caption') }}
+        {{ form.address(class_='form-control') }}
+        {% if form.address.errors %}
+        <ul class="error-list">{% for error in form.address.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        {{ form.submit(class_='btn-poke') }}
+        <a class="btn-poke-alt" href="{{ url_for('users.login') }}">Back To Login</a>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}

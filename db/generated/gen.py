@@ -26,6 +26,7 @@ CATEGORY_CATALOG = [
     {
         'name': 'Books',
         'weight': 18,
+        'subcategories': ['Cookbooks', 'Reference', 'Hobbies & Skills'],
         'price_range': (8.99, 34.99),
         'premium_multiplier': (1.4, 2.2),
         'premium_rate': 0.10,
@@ -35,10 +36,12 @@ CATEGORY_CATALOG = [
         'topics': ['Home Baking', 'Trail Running', 'Personal Finance', 'Digital Photography', 'Indoor Gardening', 'Strength Training', 'Minimalist Living', 'Creative Writing'],
         'features': ['clear chapter summaries', 'easy reference tables', 'step-by-step examples', 'photography throughout', 'practical checklists'],
         'use_cases': ['weeknight learning', 'gift giving', 'reference on the shelf', 'learning a new hobby', 'building better routines'],
+        'tag_pool': ['giftable', 'illustrated', 'beginner-friendly', 'reference', 'paperback', 'hardcover'],
     },
     {
         'name': 'Electronics',
         'weight': 16,
+        'subcategories': ['Audio', 'Computing', 'Cameras & Wearables'],
         'price_range': (24.99, 699.99),
         'premium_multiplier': (1.5, 3.4),
         'premium_rate': 0.22,
@@ -47,10 +50,12 @@ CATEGORY_CATALOG = [
         'nouns': ['Headphones', 'Tablet', 'Speaker', 'Monitor', 'Keyboard', 'Action Camera', 'Smartwatch', 'Webcam'],
         'features': ['long battery life', 'USB-C charging', 'fast pairing', 'crisp display quality', 'stable Bluetooth performance'],
         'use_cases': ['remote work setups', 'travel days', 'gaming desks', 'daily commuting', 'video calls'],
+        'tag_pool': ['wireless', 'portable', 'usb-c', 'bluetooth', 'premium', 'desk setup'],
     },
     {
         'name': 'Home',
         'weight': 14,
+        'subcategories': ['Decor & Storage', 'Kitchen', 'Bedding & Bath'],
         'price_range': (14.99, 249.99),
         'premium_multiplier': (1.4, 2.8),
         'premium_rate': 0.16,
@@ -59,10 +64,12 @@ CATEGORY_CATALOG = [
         'nouns': ['Storage Bins', 'Sheet Set', 'Throw Blanket', 'Knife Set', 'Floor Lamp', 'Bath Towels', 'Bakeware Set'],
         'features': ['easy-clean surfaces', 'durable construction', 'space-saving design', 'soft-touch materials', 'neutral finishes'],
         'use_cases': ['small apartments', 'guest rooms', 'kitchen refreshes', 'weekly meal prep', 'everyday home organization'],
+        'tag_pool': ['space-saving', 'soft-touch', 'giftable', 'kitchen', 'home refresh', 'neutral finish'],
     },
     {
         'name': 'Clothing',
         'weight': 12,
+        'subcategories': ['Tops & Layers', 'Bottoms', 'Activewear'],
         'price_range': (12.99, 119.99),
         'premium_multiplier': (1.3, 2.6),
         'premium_rate': 0.18,
@@ -71,10 +78,12 @@ CATEGORY_CATALOG = [
         'nouns': ['Hoodie', 'Joggers', 'Oxford Shirt', 'Puffer Vest', 'Training Tee', 'Denim Jacket', 'Crew Socks'],
         'features': ['soft fabric blends', 'clean stitching', 'easy layering', 'breathable materials', 'comfortable stretch'],
         'use_cases': ['daily wear', 'travel outfits', 'gym sessions', 'weekend errands', 'cool-weather layering'],
+        'tag_pool': ['lightweight', 'layering', 'everyday', 'stretch', 'travel-ready', 'giftable'],
     },
     {
         'name': 'Sports',
         'weight': 10,
+        'subcategories': ['Fitness', 'Outdoor Gear', 'Recovery'],
         'price_range': (15.99, 289.99),
         'premium_multiplier': (1.4, 3.0),
         'premium_rate': 0.20,
@@ -83,10 +92,12 @@ CATEGORY_CATALOG = [
         'nouns': ['Yoga Mat', 'Camping Stove', 'Dumbbell Set', 'Running Vest', 'Hydration Pack', 'Trekking Poles', 'Resistance Bands'],
         'features': ['grippy surfaces', 'solid balance', 'packable designs', 'weather-ready materials', 'stable performance'],
         'use_cases': ['garage workouts', 'weekend hikes', 'race prep', 'outdoor training', 'recovery days'],
+        'tag_pool': ['training', 'recovery', 'weather-ready', 'packable', 'lightweight', 'outdoor'],
     },
     {
         'name': 'Beauty',
         'weight': 8,
+        'subcategories': ['Skincare', 'Haircare', 'Body Care'],
         'price_range': (9.99, 89.99),
         'premium_multiplier': (1.4, 2.5),
         'premium_rate': 0.15,
@@ -95,10 +106,12 @@ CATEGORY_CATALOG = [
         'nouns': ['Face Serum', 'Shampoo', 'Body Lotion', 'Cleanser', 'Hair Mask', 'Lip Balm Set', 'Sunscreen'],
         'features': ['lightweight textures', 'clean finishes', 'easy daily use', 'skin-friendly formulas', 'fresh scents'],
         'use_cases': ['morning routines', 'travel kits', 'dry-weather care', 'everyday maintenance', 'gift baskets'],
+        'tag_pool': ['hydrating', 'daily routine', 'gentle', 'travel size', 'fragrance-free', 'giftable'],
     },
     {
         'name': 'Grocery',
         'weight': 9,
+        'subcategories': ['Pantry Staples', 'Snacks', 'Coffee & Breakfast'],
         'price_range': (4.49, 39.99),
         'premium_multiplier': (1.2, 1.9),
         'premium_rate': 0.08,
@@ -107,10 +120,12 @@ CATEGORY_CATALOG = [
         'nouns': ['Coffee Beans', 'Granola', 'Pasta Pack', 'Olive Oil', 'Trail Mix', 'Oatmeal Cups', 'Snack Variety Box'],
         'features': ['reliable pantry value', 'balanced flavor', 'fresh packaging', 'easy portioning', 'simple ingredients'],
         'use_cases': ['busy mornings', 'office snacks', 'quick dinners', 'road trips', 'stocking the pantry'],
+        'tag_pool': ['organic', 'family size', 'quick meal', 'snackable', 'single-origin', 'pantry staple'],
     },
     {
         'name': 'Pet Supplies',
         'weight': 7,
+        'subcategories': ['Beds & Furniture', 'Walk & Travel', 'Feeding & Toys'],
         'price_range': (7.99, 149.99),
         'premium_multiplier': (1.3, 2.4),
         'premium_rate': 0.14,
@@ -119,10 +134,12 @@ CATEGORY_CATALOG = [
         'nouns': ['Dog Bed', 'Cat Tree', 'Treat Pouch', 'Leash Set', 'Automatic Feeder', 'Chew Toy Pack', 'Litter Mat'],
         'features': ['pet-safe materials', 'easy cleanup', 'thoughtful sizing', 'durable hardware', 'cozy finishes'],
         'use_cases': ['daily walks', 'apartment pets', 'crate training', 'older dogs', 'active cats'],
+        'tag_pool': ['durable', 'travel-friendly', 'pet-safe', 'easy-clean', 'cozy', 'interactive'],
     },
     {
         'name': 'Office',
         'weight': 6,
+        'subcategories': ['Desk Setup', 'Planning & Paper', 'Organization'],
         'price_range': (6.99, 219.99),
         'premium_multiplier': (1.3, 2.6),
         'premium_rate': 0.12,
@@ -131,13 +148,50 @@ CATEGORY_CATALOG = [
         'nouns': ['Desk Pad', 'Planner', 'Monitor Stand', 'Filing Set', 'Notebook Pack', 'Task Chair Cushion', 'Cable Organizer'],
         'features': ['clean desk organization', 'professional finish', 'sturdy build quality', 'useful daily layout', 'workspace-friendly sizing'],
         'use_cases': ['hybrid work', 'student desks', 'paper planning', 'small offices', 'daily admin tasks'],
+        'tag_pool': ['ergonomic', 'compact', 'desk setup', 'planner', 'organization', 'professional'],
     },
 ]
 
-CATEGORY_NAMES = [category['name'] for category in CATEGORY_CATALOG]
-CATEGORY_BY_ID = {index + 1: dict(category, id=index + 1) for index, category in enumerate(CATEGORY_CATALOG)}
-CATEGORY_IDS = list(CATEGORY_BY_ID.keys())
-CATEGORY_WEIGHTS = [CATEGORY_BY_ID[category_id]['weight'] for category_id in CATEGORY_IDS]
+ROOT_CATEGORIES = {index + 1: dict(category, id=index + 1) for index, category in enumerate(CATEGORY_CATALOG)}
+ROOT_CATEGORY_IDS = list(ROOT_CATEGORIES.keys())
+ROOT_CATEGORY_WEIGHTS = [ROOT_CATEGORIES[category_id]['weight'] for category_id in ROOT_CATEGORY_IDS]
+
+
+def build_category_rows():
+    slugify_local = lambda value: re.sub(r'[^a-z0-9]+', '-', value.lower()).strip('-')
+    rows = []
+    leaf_ids_by_root = defaultdict(list)
+
+    for root_id, category in ROOT_CATEGORIES.items():
+        rows.append({
+            'id': root_id,
+            'name': category['name'],
+            'parent_id': '',
+            'slug': slugify_local(category['name']),
+            'is_active': 'true',
+            'root_id': root_id,
+            'is_leaf': False,
+        })
+
+    next_id = len(ROOT_CATEGORIES) + 1
+    for root_id, category in ROOT_CATEGORIES.items():
+        for subcategory_name in category['subcategories']:
+            rows.append({
+                'id': next_id,
+                'name': subcategory_name,
+                'parent_id': root_id,
+                'slug': slugify_local(subcategory_name),
+                'is_active': 'true',
+                'root_id': root_id,
+                'is_leaf': True,
+            })
+            leaf_ids_by_root[root_id].append(next_id)
+            next_id += 1
+
+    return rows, dict(leaf_ids_by_root)
+
+
+CATEGORY_ROWS, LEAF_CATEGORY_IDS_BY_ROOT = build_category_rows()
 
 POSITIVE_REVIEW_OPENERS = [
     'Really happy with this purchase.',
@@ -231,7 +285,7 @@ def choose_interest_ids():
     interest_count = weighted_choice([2, 3, 4], [56, 31, 13])
     chosen = []
     while len(chosen) < interest_count:
-        category_id = weighted_choice(CATEGORY_IDS, CATEGORY_WEIGHTS)
+        category_id = weighted_choice(ROOT_CATEGORY_IDS, ROOT_CATEGORY_WEIGHTS)
         if category_id not in chosen:
             chosen.append(category_id)
     return chosen
@@ -255,6 +309,11 @@ def choose_user_for_category(user_profiles, category_id, prefer_seller=False, ex
         fallback = [profile for profile in user_profiles if profile['id'] not in exclude_ids]
         return random.choice(fallback)
     return weighted_choice(candidates, weights)
+
+
+def choose_leaf_category_id(root_category_id):
+    leaf_ids = LEAF_CATEGORY_IDS_BY_ROOT[root_category_id]
+    return random.choice(leaf_ids)
 
 
 def generate_book_name(category):
@@ -298,6 +357,57 @@ def generate_product_description(category, premium=False):
     )
 
 
+def generate_product_tags(category, product_name, premium=False, popularity=0.0):
+    tags = set(random.sample(category['tag_pool'], k=min(2, len(category['tag_pool']))))
+    lowered_name = product_name.lower()
+
+    keyword_tags = {
+        'wireless': 'wireless',
+        'portable': 'portable',
+        'compact': 'compact',
+        'smart': 'smart',
+        'noise-canceling': 'noise-canceling',
+        'organic': 'organic',
+        'protein': 'protein',
+        'ergonomic': 'ergonomic',
+        'adjustable': 'adjustable',
+        'lightweight': 'lightweight',
+        'hydrating': 'hydrating',
+        'fragrance-free': 'fragrance-free',
+        'interactive': 'interactive',
+        'orthopedic': 'orthopedic',
+    }
+    for keyword, tag in keyword_tags.items():
+        if keyword in lowered_name:
+            tags.add(tag)
+
+    if premium:
+        tags.add('premium')
+        tags.add('giftable')
+    if popularity > 0.72:
+        tags.add('best-seller')
+    if category['name'] == 'Books':
+        tags.add(weighted_choice(['reference', 'illustrated', 'beginner-friendly'], [3, 2, 2]))
+    elif category['name'] == 'Electronics':
+        tags.add(weighted_choice(['desk setup', 'travel-ready', 'bluetooth'], [2, 2, 3]))
+    elif category['name'] == 'Home':
+        tags.add(weighted_choice(['space-saving', 'home refresh', 'giftable'], [3, 2, 2]))
+    elif category['name'] == 'Clothing':
+        tags.add(weighted_choice(['everyday', 'layering', 'travel-ready'], [3, 3, 2]))
+    elif category['name'] == 'Sports':
+        tags.add(weighted_choice(['training', 'outdoor', 'recovery'], [3, 2, 2]))
+    elif category['name'] == 'Beauty':
+        tags.add(weighted_choice(['daily routine', 'gentle', 'travel size'], [3, 2, 2]))
+    elif category['name'] == 'Grocery':
+        tags.add(weighted_choice(['pantry staple', 'quick meal', 'snackable'], [3, 2, 2]))
+    elif category['name'] == 'Pet Supplies':
+        tags.add(weighted_choice(['pet-safe', 'easy-clean', 'durable'], [3, 2, 2]))
+    elif category['name'] == 'Office':
+        tags.add(weighted_choice(['desk setup', 'organization', 'professional'], [3, 2, 2]))
+
+    return sorted(tags)[:6]
+
+
 def product_quality_score(popularity, premium=False):
     quality = 0.48 + popularity * 0.32 + random.uniform(-0.18, 0.18)
     if premium:
@@ -319,7 +429,7 @@ def review_rating_from_quality(quality):
 
 
 def product_review_text(product, rating):
-    category = CATEGORY_BY_ID[product['category_id']]
+    category = ROOT_CATEGORIES[product['root_category_id']]
     feature = random.choice(category['features'])
     use_case = random.choice(category['use_cases'])
     if rating >= 5:
@@ -421,9 +531,9 @@ def gen_categories():
     with open(BASE / 'Categories.csv', 'w') as f:
         writer = get_csv_writer(f)
         print('Categories...', end=' ', flush=True)
-        for category in CATEGORY_CATALOG:
-            writer.writerow([category['name']])
-        print(f'{len(CATEGORY_CATALOG)} generated')
+        for row in CATEGORY_ROWS:
+            writer.writerow([row['id'], row['name'], row['parent_id'], row['slug'], row['is_active']])
+        print(f'{len(CATEGORY_ROWS)} generated')
 
 
 def gen_products(num_products, user_profiles):
@@ -440,9 +550,10 @@ def gen_products(num_products, user_profiles):
             if pid % 100 == 0:
                 print(f'{pid}', end=' ', flush=True)
 
-            category_id = weighted_choice(CATEGORY_IDS, CATEGORY_WEIGHTS)
-            category = CATEGORY_BY_ID[category_id]
-            creator = choose_user_for_category(user_profiles, category_id, prefer_seller=True)
+            root_category_id = weighted_choice(ROOT_CATEGORY_IDS, ROOT_CATEGORY_WEIGHTS)
+            leaf_category_id = choose_leaf_category_id(root_category_id)
+            category = ROOT_CATEGORIES[root_category_id]
+            creator = choose_user_for_category(user_profiles, root_category_id, prefer_seller=True)
             premium = random.random() < category['premium_rate']
             raw_name = generate_book_name(category) if category['name'] == 'Books' else generate_general_name(category, premium=premium)
             name = ensure_unique_name(raw_name, seen_names)
@@ -459,7 +570,8 @@ def gen_products(num_products, user_profiles):
             product = {
                 'id': pid,
                 'creator_id': creator['id'],
-                'category_id': category_id,
+                'category_id': leaf_category_id,
+                'root_category_id': root_category_id,
                 'name': name,
                 'description': description,
                 'image_url': image_url,
@@ -468,9 +580,10 @@ def gen_products(num_products, user_profiles):
                 'popularity': popularity,
                 'quality': quality,
                 'premium': premium,
+                'tags': generate_product_tags(category, name, premium=premium, popularity=popularity),
             }
             products.append(product)
-            products_by_category[category_id].append(pid)
+            products_by_category[root_category_id].append(pid)
             popularity_weights[pid] = 0.2 + popularity * 3.6
             if product['available']:
                 available_product_ids.append(pid)
@@ -478,7 +591,7 @@ def gen_products(num_products, user_profiles):
             writer.writerow([
                 pid,
                 creator['id'],
-                category_id,
+                leaf_category_id,
                 name,
                 description,
                 image_url,
@@ -505,7 +618,7 @@ def gen_inventory(products, user_profiles):
             if not product['available']:
                 continue
 
-            category_id = product['category_id']
+            category_id = product['root_category_id']
             popularity = product['popularity']
             premium = product['premium']
             if premium:
@@ -536,7 +649,7 @@ def gen_inventory(products, user_profiles):
             for index, seller in enumerate(sellers):
                 if premium:
                     quantity = weighted_choice([0, 1, 2, 3, 4, 5, 6], [10, 18, 22, 20, 14, 10, 6])
-                elif CATEGORY_BY_ID[category_id]['name'] in {'Books', 'Home', 'Grocery', 'Office'} and random.random() < 0.28:
+                elif ROOT_CATEGORIES[category_id]['name'] in {'Books', 'Home', 'Grocery', 'Office'} and random.random() < 0.28:
                     quantity = random.randint(25, 140)
                 elif random.random() < 0.12:
                     quantity = 0
@@ -841,6 +954,7 @@ def main():
     user_profiles = gen_users(NUM_USERS)
     gen_categories()
     products, available_product_ids, products_by_category, popularity_weights = gen_products(NUM_PRODUCTS, user_profiles)
+    gen_tags_and_product_tags(products)
     product_lookup, product_listings, seller_product_pairs, seller_listing_count, seller_quality, stocked_product_ids = gen_inventory(products, user_profiles)
     gen_purchases(NUM_PURCHASES, user_profiles, available_product_ids, products_by_category, popularity_weights)
     gen_product_reviews(NUM_PRODUCT_REVIEWS, user_profiles, available_product_ids, products_by_category, popularity_weights, product_lookup)

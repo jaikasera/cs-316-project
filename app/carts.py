@@ -1,12 +1,22 @@
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, session
 from flask_login import current_user, login_required
 
+from .marketplace import (
+    clear_active_coupon,
+    evaluate_coupon,
+    get_active_coupon_code,
+    get_saved_for_later,
+    pop_saved_for_later,
+    save_for_later,
+    set_active_coupon_code,
+)
 from .models.cart import CartItem
 from .models.buyer_order import BuyerOrder
 from .models.coupon import Coupon
 from .models.analytics import OrderAnalytics
 from .models.wishlist import Wishlist
 from .models.user import User
+from .models.product import Product
 
 bp = Blueprint('carts', __name__)
 
@@ -265,6 +275,8 @@ def checkout():
         flash(error, 'danger')
         return redirect(url_for('carts.cart_page'))
 
+    if coupon['discount'] > 0:
+        clear_active_coupon()
     flash(f'Order #{order_id} placed successfully!', 'success')
     return redirect(url_for('carts.order_detail', order_id=order_id))
 

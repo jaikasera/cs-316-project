@@ -1,9 +1,26 @@
 {% extends "base.html" %}
 
 {% block content %}
-<br><br>
+<div class="container-fluid px-0">
+  <div class="poke-panel section-spacer">
+    <div class="poke-line mb-3">
+      <div>
+        <h2 class="poke-panel-title mb-2">YOUR BAG</h2>
+        <p class="poke-subtitle mb-0">EVERY ITEM YOU PICK UP AT THE MART IS STORED HERE.</p>
+      </div>
+      {% if current_user.is_authenticated %}
+        <a class="btn-poke-alt" href="{{ url_for('carts.order_history') }}">Trainer Log</a>
+      {% endif %}
+    </div>
 
-<h2>Shopping Cart</h2>
+    {% if not current_user.is_authenticated %}
+      <form action="{{ url_for('carts.cart_page') }}" method="GET" class="poke-form-panel">
+        <label class="poke-caption" for="user_id">TRAINER ID</label>
+        <input class="form-control mb-3" type="number" name="user_id" min="0" value="{{ user_id if user_id is not none else '' }}">
+        <button class="btn-poke" type="submit">Open Bag</button>
+      </form>
+    {% endif %}
+  </div>
 
 {% if current_user.is_authenticated %}
   <p>
@@ -80,14 +97,14 @@
           <td>{{ item.seller_name }} (ID: {{ item.seller_id }})</td>
           <td>
             {% if is_own_cart %}
-            <form action="{{ url_for('carts.update_cart_item') }}" method="POST" style="display:inline-flex; align-items:center; gap:4px;">
+            <form action="{{ url_for('carts.update_cart_item') }}" method="POST" class="d-flex flex-wrap gap-2 align-items-center">
               <input type="hidden" name="product_id" value="{{ item.product_id }}">
               <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
               <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.available_stock if item.available_stock and item.available_stock > 0 else 999 }}" style="width:70px;">
               <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
             </form>
             {% else %}
-            {{ item.quantity }}
+            <span class="poke-caption">QTY: {{ item.quantity }}</span>
             {% endif %}
           </td>
           <td>
@@ -128,7 +145,7 @@
               <input type="hidden" name="seller_id" value="{{ item.seller_id }}">
               <button type="submit" class="btn btn-sm btn-danger">Remove</button>
             </form>
-          </td>
+          </div>
           {% endif %}
         </tr>
       {% endfor %}
@@ -238,6 +255,5 @@
     </tbody>
   </table>
   {% endif %}
-{% endif %}
-
+</div>
 {% endblock %}
