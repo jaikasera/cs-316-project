@@ -102,11 +102,9 @@ Sellers Guru: responsible for Inventory / Order Fulfillment - Evan Bulan
 
 FINAL SUBMISSION
 
-DATA GENERATOR
+Products Guru: responsible for Products — Shambhavi Sinha
     * db/generated/gen.py now builds a larger marketplace-style seed dataset with hundreds of users, thousands of category-aware products, multi-seller inventory, popularity-weighted reviews, realistic price spreads, mixed stock levels, and repeat cart/order patterns.
     * The generator is intentionally category-driven so products in Books, Electronics, Home, Clothing, Sports, Beauty, Grocery, Pet Supplies, and Office read like real listings instead of generic Faker text.
-
-RECENT WORK SUMMARY
     * Added browse-page pagination, an only-in-stock filter, and cheapest-seller highlighting.
     * Added homepage support for top-rated products.
     * Added product review submission and update support from the product detail page.
@@ -114,3 +112,19 @@ RECENT WORK SUMMARY
     * Improved add-to-cart validation and flash-message UX across product/cart flows.
     * Upgraded the create/edit product form with stronger validation and a more guided setup experience.
     * Reworked the generated marketplace dataset to be larger, category-aware, and more realistic.
+    * Restyled the customer-facing storefront into a Pokemon-inspired PokeMart theme with a custom banner/header, rotating hero banners, responsive product shelves, and updated customer pages.
+    * Added wish list support, recently viewed tracking, and personalized homepage recommendations.
+    * Added related products and frequently-bought-together suggestions on the product detail page.
+    * Added product variants, image gallery support, price-watch messaging, and low-stock/restock alerts.
+    * Added richer seller comparison details including seller ratings, stock visibility, cheapest-seller emphasis, and delivery estimate messaging.
+    * Added review filters (stars, recent, with text, verified purchase only) plus verified-purchase badges.
+    * Added popularity-based browse sorting in addition to price/rating sorting.
+    * Added coupon support and save-for-later functionality in the cart flow.
+    * Polished seller storefront pages with merchant stats, featured items, and improved inventory presentation.
+    * Replaced the flat category-only setup with a label taxonomy that supports hierarchical categories plus reusable product tags.
+    * Added a Labels page for creating and reviewing category/tag labels, with product forms updated to choose a leaf category and attach comma-separated tags.
+    * Updated browse and product-detail flows to show taxonomy labels directly: products can now be filtered by category descendants or tag labels, and tags appear on browse cards and detail pages.
+    * Updated the schema/load files to support Categories with parent-child structure plus Tags and ProductTags join data.
+    * Added starter taxonomy seed data in both db/data and db/generated so the new hierarchy/tag workflow is represented in the dataset as well.
+    * Revamped the /products/top?k= page into a more polished “top finds” showcase with styled cards, ranking badges, and a friendlier k-selector flow.
+    

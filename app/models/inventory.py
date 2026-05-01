@@ -101,6 +101,8 @@ SELECT
     i.quantity,
     i.price,
     i.updated_at,
+    COALESCE(sr.avg_rating, 0) AS seller_avg_rating,
+    COALESCE(sr.review_count, 0) AS seller_review_count,
     CASE
         WHEN i.price = (
             SELECT MIN(i2.price)
@@ -111,9 +113,70 @@ SELECT
     END AS is_cheapest
 FROM Inventory i
 JOIN Users u ON u.id = i.seller_id
+LEFT JOIN LATERAL (
+    SELECT AVG(rating) AS avg_rating, COUNT(*) AS review_count
+    FROM SellerReviews sr
+    WHERE sr.seller_id = i.seller_id
+) sr ON TRUE
 WHERE i.product_id = :product_id
 ORDER BY i.price ASC, i.quantity DESC
 ''', product_id=product_id)
+
+    @staticmethod
+    def get_storefront_stats(seller_id: int):
+        rows = app.db.execute('''
+SELECT
+    u.id,
+    u.firstname,
+    u.lastname,
+    u.address,
+    COUNT(i.product_id) AS listing_count,
+    COUNT(i.product_id) FILTER (WHERE i.quantity > 0 AND p.available = TRUE) AS active_listing_count,
+    COALESCE(SUM(i.quantity), 0) AS total_stock_units,
+    AVG(i.price) AS avg_price,
+    COALESCE(sr.avg_rating, 0) AS avg_rating,
+    COALESCE(sr.review_count, 0) AS review_count
+FROM Users u
+LEFT JOIN Inventory i ON i.seller_id = u.id
+LEFT JOIN Products p ON p.id = i.product_id
+LEFT JOIN LATERAL (
+    SELECT AVG(rating) AS avg_rating, COUNT(*) AS review_count
+    FROM SellerReviews sr
+    WHERE sr.seller_id = u.id
+) sr ON TRUE
+WHERE u.id = :seller_id
+GROUP BY u.id, u.firstname, u.lastname, u.address, sr.avg_rating, sr.review_count
+''', seller_id=seller_id)
+        return rows[0] if rows else None
+
+    @staticmethod
+    def get_featured_products_for_seller(seller_id: int, limit: int = 4):
+        rows = app.db.execute('''
+SELECT
+    p.id,
+    p.name,
+    p.description,
+    p.image_url,
+    p.available,
+    i.quantity,
+    i.price AS inventory_price
+FROM Inventory i
+JOIN Products p ON p.id = i.product_id
+LEFT JOIN LATERAL (
+    SELECT AVG(pr.rating) AS avg_rating, COUNT(*) AS review_count
+    FROM ProductReviews pr
+    WHERE pr.product_id = p.id
+) rev ON TRUE
+WHERE i.seller_id = :seller_id
+ORDER BY
+    CASE WHEN i.quantity > 0 AND p.available = TRUE THEN 0 ELSE 1 END,
+    COALESCE(rev.avg_rating, 0) DESC,
+    COALESCE(rev.review_count, 0) DESC,
+    i.price DESC,
+    p.id ASC
+LIMIT :limit
+''', seller_id=seller_id, limit=limit)
+        return [InventoryItem(*row) for row in rows]
 
 
 class InventoryItemDetail:
