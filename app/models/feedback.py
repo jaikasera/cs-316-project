@@ -81,16 +81,7 @@ SELECT (
         return rows[0][0] if rows else 0
 
     @staticmethod
-    def get_product_reviews(
-        product_id,
-        page=1,
-        per_page=10,
-        sort_by='date_desc',
-        filter_rating=None,
-        only_with_text=False,
-        only_recent=False,
-        only_verified=False,
-    ):
+    def get_product_reviews(product_id, page=1, per_page=10, sort_by='date_desc'):
         offset = (page - 1) * per_page
         order_by = 'pr.created_at DESC'
         if sort_by == 'date_asc':
@@ -99,26 +90,6 @@ SELECT (
             order_by = 'pr.rating DESC, pr.created_at DESC'
         elif sort_by == 'rating_asc':
             order_by = 'pr.rating ASC, pr.created_at DESC'
-
-        where_clauses = ['pr.product_id = :product_id']
-        params = {
-            'product_id': product_id,
-            'per_page': per_page,
-            'offset': offset,
-        }
-
-        if filter_rating is not None:
-            where_clauses.append('pr.rating = :filter_rating')
-            params['filter_rating'] = filter_rating
-
-        if only_with_text:
-            where_clauses.append("COALESCE(NULLIF(TRIM(pr.review), ''), '') <> ''")
-
-        if only_recent:
-            where_clauses.append("pr.created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'")
-
-        if only_verified:
-            where_clauses.append('EXISTS (SELECT 1 FROM orders o JOIN order_items oi ON oi.order_id = o.id WHERE o.user_id = pr.user_id AND oi.product_id = pr.product_id)')
 
         return app.db.execute(f'''
 SELECT
@@ -129,50 +100,22 @@ SELECT
     pr.review,
     pr.created_at,
     u.firstname,
-    u.lastname,
-    EXISTS (
-        SELECT 1
-        FROM orders o
-        JOIN order_items oi ON oi.order_id = o.id
-        WHERE o.user_id = pr.user_id AND oi.product_id = pr.product_id
-    ) AS verified_purchase
+    u.lastname
 FROM ProductReviews pr
 JOIN Users u ON u.id = pr.user_id
-WHERE {' AND '.join(where_clauses)}
+WHERE pr.product_id = :product_id
 ORDER BY {order_by}
 LIMIT :per_page
 OFFSET :offset
-''', **params)
+''', product_id=product_id, per_page=per_page, offset=offset)
 
     @staticmethod
-    def get_product_review_count(
-        product_id,
-        filter_rating=None,
-        only_with_text=False,
-        only_recent=False,
-        only_verified=False,
-    ):
-        where_clauses = ['pr.product_id = :product_id']
-        params = {'product_id': product_id}
-
-        if filter_rating is not None:
-            where_clauses.append('pr.rating = :filter_rating')
-            params['filter_rating'] = filter_rating
-
-        if only_with_text:
-            where_clauses.append("COALESCE(NULLIF(TRIM(pr.review), ''), '') <> ''")
-
-        if only_recent:
-            where_clauses.append("pr.created_at >= CURRENT_TIMESTAMP - INTERVAL '30 days'")
-
-        if only_verified:
-            where_clauses.append('EXISTS (SELECT 1 FROM orders o JOIN order_items oi ON oi.order_id = o.id WHERE o.user_id = pr.user_id AND oi.product_id = pr.product_id)')
-
-        rows = app.db.execute(f'''
+    def get_product_review_count(product_id):
+        rows = app.db.execute('''
 SELECT COUNT(*)
-FROM ProductReviews pr
-WHERE {' AND '.join(where_clauses)}
-''', **params)
+FROM ProductReviews
+WHERE product_id = :product_id
+''', product_id=product_id)
         return rows[0][0] if rows else 0
 
     @staticmethod
@@ -253,14 +196,3 @@ FROM SellerReviews
 WHERE seller_id = :seller_id
 ''', seller_id=seller_id)
         return rows[0][0] if rows and rows[0][0] is not None else None
-
-    @staticmethod
-    def get_seller_review_summary(seller_id):
-        rows = app.db.execute('''
-SELECT
-    COALESCE(AVG(rating), 0) AS avg_rating,
-    COUNT(*) AS review_count
-FROM SellerReviews
-WHERE seller_id = :seller_id
-''', seller_id=seller_id)
-        return rows[0] if rows else (0, 0)

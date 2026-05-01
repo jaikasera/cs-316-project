@@ -1,200 +1,240 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="browse-layout">
-  <aside class="filter-sticky">
-    <div class="poke-form-panel section-spacer">
-      <h2 class="section-title">Filter Shelves</h2>
-      <form action="{{ url_for('products.browse_products') }}" method="GET">
-        <input type="hidden" name="page" value="1">
+<div class="container mt-4 mb-5">
 
-        <label class="poke-caption" for="keyword">Search</label>
-        <input class="form-control mb-3" id="keyword" type="text" name="keyword" placeholder="Potion, plush, berries..." value="{{ keyword }}">
-
-        <label class="poke-caption" for="category_id">Department</label>
-        <select class="form-control mb-3" id="category_id" name="category_id">
-          <option value="">All Departments</option>
-          {% for category in categories %}
-            <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>{{ category.name }}</option>
-            {% for child in category.children %}
-              <option value="{{ child.id }}" {% if selected_category == child.id %}selected{% endif %}>&nbsp;&nbsp;{{ child.name }}</option>
-            {% endfor %}
-          {% endfor %}
-        </select>
-
-        <label class="poke-caption" for="tag">Tag</label>
-        <select class="form-control mb-3" id="tag" name="tag">
-          <option value="">All Tags</option>
-          {% for tag in active_tags %}
-            <option value="{{ tag.slug }}" {% if selected_tag == tag.slug %}selected{% endif %}>{{ tag.display_name }} ({{ tag.usage_count }})</option>
-          {% endfor %}
-        </select>
-
-        <label class="poke-caption" for="sort_by">Sort by</label>
-        <select class="form-control mb-3" id="sort_by" name="sort_by">
-          <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
-          <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
-          <option value="rating_desc" {% if sort_by == 'rating_desc' %}selected{% endif %}>Top Rated</option>
-          <option value="rating_asc" {% if sort_by == 'rating_asc' %}selected{% endif %}>Lowest Rated</option>
-          <option value="popularity_desc" {% if sort_by == 'popularity_desc' %}selected{% endif %}>Most Popular</option>
-        </select>
-
-        <div class="row">
-          <div class="col-6 mb-3">
-            <label class="poke-caption" for="min_price">Min Price</label>
-            <input class="form-control" id="min_price" type="number" step="0.01" name="min_price" value="{{ min_price if min_price is not none else '' }}">
-          </div>
-          <div class="col-6 mb-3">
-            <label class="poke-caption" for="max_price">Max Price</label>
-            <input class="form-control" id="max_price" type="number" step="0.01" name="max_price" value="{{ max_price if max_price is not none else '' }}">
-          </div>
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+        <div>
+          <h2 class="mb-1">Browse Products</h2>
+          <p class="text-muted mb-0">
+            Search, filter, and compare products across categories, sellers, prices, and ratings.
+          </p>
         </div>
 
-        <label class="poke-caption" for="min_rating">Minimum stars</label>
-        <input class="form-control mb-3" id="min_rating" type="number" step="0.1" min="1" max="5" name="min_rating" value="{{ min_rating if min_rating is not none else '' }}">
+        {% if current_user.is_authenticated %}
+          <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-success btn-sm" href="{{ url_for('products.create_product') }}">
+              Create New Product
+            </a>
+            <a class="btn btn-outline-dark btn-sm" href="{{ url_for('products.my_products') }}">
+              My Products
+            </a>
+          </div>
+        {% endif %}
+      </div>
 
-        <label class="poke-caption" for="per_page">Results per page</label>
-        <select class="form-control mb-3" id="per_page" name="per_page">
-          <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
-          <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
-          <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
-          <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
-        </select>
+      <form action="{{ url_for('products.browse_products') }}" method="GET">
+        <input type="hidden" name="page" value="1">
+        <div class="row g-2">
+          <div class="col-md-3">
+            <input class="form-control"
+                   type="text"
+                   name="keyword"
+                   placeholder="Search name/description"
+                   value="{{ keyword }}">
+          </div>
 
-        <label class="d-flex align-items-center mb-3" style="gap:10px; font-weight:700; color:var(--pk-ink);">
-          <input type="checkbox" value="1" id="only_in_stock" name="only_in_stock" {% if only_in_stock %}checked{% endif %}>
-          Only show items in stock
-        </label>
+          <div class="col-md-2">
+            <select class="form-select" name="category_id">
+              <option value="">All Categories</option>
+              {% for category in categories %}
+                <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
+                  {{ category.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
 
-        <div class="d-grid" style="display:grid; gap:10px;">
-          <button class="btn-poke" type="submit">Apply Filters</button>
-          <a class="btn-poke-alt" href="{{ url_for('products.browse_products') }}">Reset</a>
+          <div class="col-md-2">
+            <select class="form-select" name="sort_by">
+              <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+              <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+              <option value="rating_desc" {% if sort_by == 'rating_desc' %}selected{% endif %}>Rating: High to Low</option>
+              <option value="rating_asc" {% if sort_by == 'rating_asc' %}selected{% endif %}>Rating: Low to High</option>
+            </select>
+          </div>
+
+          <div class="col-md-1">
+            <input class="form-control"
+                   type="number"
+                   step="0.01"
+                   name="min_price"
+                   placeholder="Min $"
+                   value="{{ min_price if min_price is not none else '' }}">
+          </div>
+
+          <div class="col-md-1">
+            <input class="form-control"
+                   type="number"
+                   step="0.01"
+                   name="max_price"
+                   placeholder="Max $"
+                   value="{{ max_price if max_price is not none else '' }}">
+          </div>
+
+          <div class="col-md-1">
+            <input class="form-control"
+                   type="number"
+                   step="0.1"
+                   min="1"
+                   max="5"
+                   name="min_rating"
+                   placeholder="Min ★"
+                   value="{{ min_rating if min_rating is not none else '' }}">
+          </div>
+
+          <div class="col-md-2">
+            <select class="form-select" name="per_page">
+              <option value="10" {% if per_page == 10 %}selected{% endif %}>10 / page</option>
+              <option value="25" {% if per_page == 25 %}selected{% endif %}>25 / page</option>
+              <option value="50" {% if per_page == 50 %}selected{% endif %}>50 / page</option>
+              <option value="100" {% if per_page == 100 %}selected{% endif %}>100 / page</option>
+            </select>
+          </div>
+        </div>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+          <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" value="1" id="only_in_stock" name="only_in_stock"
+                   {% if only_in_stock %}checked{% endif %}>
+            <label class="form-check-label" for="only_in_stock">
+              Only show in-stock products
+            </label>
+          </div>
+          <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary" href="{{ url_for('products.browse_products') }}">Reset</a>
+            <button class="btn btn-dark" type="submit">Apply Filters</button>
+          </div>
         </div>
       </form>
     </div>
+  </div>
 
-    {% if current_user.is_authenticated %}
-    <div class="poke-panel">
-      <h3 class="section-title">Seller Tools</h3>
-      <div class="d-grid" style="display:grid; gap:10px;">
-        <a class="btn-poke" href="{{ url_for('products.create_product') }}">Create Item</a>
-        <a class="btn-poke-alt" href="{{ url_for('products.my_products') }}">My Listings</a>
-      </div>
-    </div>
-    {% endif %}
-  </aside>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <p class="text-muted mb-0">
+      Showing {{ products|length }} of {{ total_count }} matching products.
+    </p>
+    <p class="text-muted mb-0">Page {{ page }} of {{ total_pages }}</p>
+  </div>
 
-  <section>
-    <div class="poke-panel browse-hero section-spacer">
-      <div class="poke-line">
-        <div>
-          <h2 class="section-title mb-1">PokeMart Shelves</h2>
-          <p class="poke-subtitle mb-0">Browse stocked items, compare sellers, and find the best deal for your bag.</p>
-        </div>
-        <div class="text-right">
-          <div class="poke-price" style="font-size:1.3rem;">{{ total_count }}</div>
-          <div class="poke-caption">items found</div>
-        </div>
-      </div>
-    </div>
-
-    {% if products %}
-      <div class="browse-grid section-spacer">
-        {% for product in products %}
-        <div class="product-tile">
+  {% if products %}
+    <div class="row">
+      {% for product in products %}
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm {% if product.in_stock %}border-success{% endif %}">
           {% if product.image_url %}
-            <img class="product-thumb" src="{{ product.image_url }}" alt="{{ product.name }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            <div class="product-thumb poke-image-frame" style="display:none;">ITEM IMAGE</div>
+            <img src="{{ product.image_url }}"
+                 class="card-img-top"
+                 alt="{{ product.name }}"
+                 style="height: 220px; object-fit: cover;">
           {% else %}
-            <div class="product-thumb poke-image-frame">ITEM IMAGE</div>
+            <div class="d-flex align-items-center justify-content-center bg-light text-muted border-bottom"
+                 style="height: 220px;">
+              No image available
+            </div>
           {% endif %}
 
-          <div class="tile-topline">
-            <div class="tile-title">{{ product.name }}</div>
-            <form action="{{ url_for('products.toggle_product_wishlist', product_id=product.id) }}" method="POST">
-              <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}">
-              <button type="submit" class="wish-toggle {% if product.id in wishlist_ids %}is-active{% endif %}" aria-label="Save {{ product.name }}">★</button>
-            </form>
+          <div class="card-body d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+              <h5 class="card-title mb-0">{{ product.name }}</h5>
+              <span class="badge bg-light text-dark border">
+                {{ product.category_name if product.category_name else "Uncategorized" }}
+              </span>
+            </div>
+
+            <p class="card-text text-muted small mb-3">
+              {{ product.description[:120] }}{% if product.description|length > 120 %}...{% endif %}
+            </p>
+
+            <div class="mb-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div>
+                <strong>Lowest Price:</strong>
+                {% if product.min_price is not none %}
+                  ${{ product.min_price }}
+                {% else %}
+                  N/A
+                {% endif %}
+              </div>
+              {% if product.in_stock %}
+                <span class="badge badge-success">In Stock</span>
+              {% else %}
+                <span class="badge badge-secondary">Out of Stock</span>
+              {% endif %}
+            </div>
+
+            <div class="mb-2">
+              <strong>Average Rating:</strong>
+              {% if product.avg_rating is not none %}
+                <span class="badge bg-warning text-dark ms-1">
+                  ★ {{ "%.2f"|format(product.avg_rating|float) }}
+                </span>
+              {% else %}
+                <span class="text-muted">No ratings</span>
+              {% endif %}
+            </div>
+
+            <div class="mb-2">
+              <strong>Sellers with stock:</strong>
+              {{ product.seller_count if product.seller_count is not none else 0 }}
+            </div>
+
+            <div class="mb-3">
+              {% if product.cheapest_seller_name %}
+                <div class="alert alert-success py-2 px-3 mb-0 small">
+                  Cheapest seller right now: <strong>{{ product.cheapest_seller_name }}</strong>
+                </div>
+              {% else %}
+                <div class="alert alert-light py-2 px-3 mb-0 small border">
+                  No active seller stock right now.
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="mt-auto">
+              <a class="btn btn-outline-dark w-100"
+                 href="{{ url_for('products.product_detail', product_id=product.id) }}">
+                View Product
+              </a>
+            </div>
           </div>
-          <div class="poke-caption">{{ product.category_name if product.category_name else 'General Merchandise' }}</div>
-          {% if product.tags %}
-          <div class="d-flex flex-wrap" style="gap:6px;">
-            {% for tag in product.tags[:4] %}
-              <a class="poke-status-featured" href="{{ url_for('products.browse_products', tag=tag.slug) }}">{{ tag.display_name }}</a>
-            {% endfor %}
-          </div>
-          {% endif %}
-
-          <div class="star-meter">
-            {% if product.avg_rating is not none %}
-              {% set rating_value = product.avg_rating|float|round(0, 'floor')|int %}
-              {% for i in range(5) %}{% if i < rating_value %}★{% else %}☆{% endif %}{% endfor %}
-              <span class="poke-caption">{{ '%.1f'|format(product.avg_rating|float) }}</span>
-            {% else %}
-              ☆☆☆☆☆ <span class="poke-caption">No ratings yet</span>
-            {% endif %}
-          </div>
-
-          <div>
-            <span class="poke-price">P${{ product.min_price if product.min_price is not none else 'N/A' }}</span>
-          </div>
-
-          <div class="poke-line">
-            <span class="{% if product.in_stock %}poke-status-good{% else %}poke-status-bad{% endif %}">
-              {% if product.in_stock %}In Stock{% else %}Sold Out{% endif %}
-            </span>
-            <span class="poke-caption">{{ product.seller_count if product.seller_count is not none else 0 }} sellers</span>
-          </div>
-
-          <div class="d-flex flex-wrap" style="gap:8px;">
-            {% if product.total_stock and product.total_stock <= 3 %}
-              <span class="poke-status-bad">Low Stock</span>
-            {% elif product.total_stock and product.total_stock >= 25 %}
-              <span class="poke-status-good">Bulk Ready</span>
-            {% endif %}
-            {% if product.order_count >= 8 %}
-              <span class="poke-status-featured">Popular Pick</span>
-            {% endif %}
-          </div>
-
-          {% if product.cheapest_seller_name %}
-          <div class="poke-caption"><strong>Best deal:</strong> {{ product.cheapest_seller_name }}</div>
-          {% endif %}
-
-          {% if product.min_price is not none and product.seller_count and product.seller_count > 1 %}
-          <div class="poke-caption">Price watch: multi-seller offers are live on this item.</div>
-          {% endif %}
-
-          <p class="poke-subtitle mb-1">{{ product.description[:110] }}{% if product.description|length > 110 %}...{% endif %}</p>
-          <a class="btn-poke mt-auto" href="{{ url_for('products.product_detail', product_id=product.id) }}">View Item</a>
         </div>
-        {% endfor %}
       </div>
-    {% else %}
-      <div class="poke-panel text-center section-spacer">
-        <h3 class="section-title">No items matched</h3>
-        <p class="poke-subtitle mb-0">Try adjusting your department, price range, or search term.</p>
-      </div>
-    {% endif %}
-
-    {% if total_pages > 1 %}
-    <div class="poke-panel">
-      <div class="poke-line">
-        <div>
-          {% if page > 1 %}
-            <a class="btn-poke-alt" href="{{ url_for('products.browse_products', page=page-1, per_page=per_page, category_id=selected_category, tag=selected_tag, keyword=keyword, sort_by=sort_by, min_price=min_price, max_price=max_price, min_rating=min_rating, only_in_stock=1 if only_in_stock else None) }}">Previous</a>
-          {% endif %}
-        </div>
-        <span class="poke-caption">Page {{ page }} of {{ total_pages }}</span>
-        <div>
-          {% if page < total_pages %}
-            <a class="btn-poke-alt" href="{{ url_for('products.browse_products', page=page+1, per_page=per_page, category_id=selected_category, tag=selected_tag, keyword=keyword, sort_by=sort_by, min_price=min_price, max_price=max_price, min_rating=min_rating, only_in_stock=1 if only_in_stock else None) }}">Next</a>
-          {% endif %}
-        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card shadow-sm">
+      <div class="card-body text-center py-5">
+        <h4 class="mb-2">No results found</h4>
+        <p class="text-muted mb-0">
+          Try changing your keyword, category, price range, rating filter, or stock filter.
+        </p>
       </div>
     </div>
-    {% endif %}
-  </section>
+  {% endif %}
+
+  {% if total_pages > 1 %}
+  <div class="d-flex justify-content-between align-items-center mt-4">
+    <div>
+      {% if page > 1 %}
+        <a class="btn btn-outline-primary btn-sm"
+           href="{{ url_for('products.browse_products', page=page-1, per_page=per_page, category_id=selected_category, keyword=keyword, sort_by=sort_by, min_price=min_price, max_price=max_price, min_rating=min_rating, only_in_stock=1 if only_in_stock else None) }}">
+          Previous
+        </a>
+      {% endif %}
+    </div>
+    <div class="text-muted small">Page {{ page }} of {{ total_pages }}</div>
+    <div>
+      {% if page < total_pages %}
+        <a class="btn btn-outline-primary btn-sm"
+           href="{{ url_for('products.browse_products', page=page+1, per_page=per_page, category_id=selected_category, keyword=keyword, sort_by=sort_by, min_price=min_price, max_price=max_price, min_rating=min_rating, only_in_stock=1 if only_in_stock else None) }}">
+          Next
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 
 {% endblock %}
