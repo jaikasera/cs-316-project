@@ -59,6 +59,19 @@ ORDER BY c.added_at DESC
         return [CartItem(*row) for row in rows]
 
     @staticmethod
+    def get_hud_totals(user_id):
+        rows = app.db.execute('''
+SELECT
+    COALESCE(SUM(quantity), 0) AS item_count,
+    COALESCE(SUM(quantity * unit_price), 0) AS subtotal
+FROM cart_items
+WHERE user_id = :user_id AND saved = FALSE
+''', user_id=user_id)
+        if not rows:
+            return 0, 0.0
+        return int(rows[0][0] or 0), float(rows[0][1] or 0.0)
+
+    @staticmethod
     def get_inventory_snapshot(product_id, seller_id):
         rows = app.db.execute('''
 SELECT p.available, p.name, i.quantity, i.price, u.firstname, u.lastname
@@ -68,6 +81,41 @@ JOIN Users u ON u.id = i.seller_id
 WHERE i.product_id = :product_id AND i.seller_id = :seller_id
 ''', product_id=product_id, seller_id=seller_id)
         return rows[0] if rows else None
+
+    @staticmethod
+    def get_inventory_snapshots(product_seller_pairs):
+        if not product_seller_pairs:
+            return {}
+
+        unique_pairs = []
+        seen = set()
+        for product_id, seller_id in product_seller_pairs:
+            key = (int(product_id), int(seller_id))
+            if key not in seen:
+                seen.add(key)
+                unique_pairs.append(key)
+
+        clauses = []
+        params = {}
+        for index, (product_id, seller_id) in enumerate(unique_pairs):
+            pid_key = f'pid_{index}'
+            sid_key = f'sid_{index}'
+            clauses.append(f'(i.product_id = :{pid_key} AND i.seller_id = :{sid_key})')
+            params[pid_key] = product_id
+            params[sid_key] = seller_id
+
+        rows = app.db.execute(f'''
+SELECT i.product_id, i.seller_id, p.available, p.name, i.quantity, i.price, u.firstname, u.lastname
+FROM Inventory i
+JOIN Products p ON p.id = i.product_id
+JOIN Users u ON u.id = i.seller_id
+WHERE {' OR '.join(clauses)}
+''', **params)
+
+        snapshots = {}
+        for row in rows:
+            snapshots[(row[0], row[1])] = row[2:]
+        return snapshots
 
     @staticmethod
     def get_item_quantity(user_id, product_id, seller_id):

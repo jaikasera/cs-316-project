@@ -65,7 +65,7 @@ SELECT pg_catalog.setval('public.order_items_id_seq',
 \COPY wishlist(user_id, product_id, added_at) FROM 'Wishlist.csv' WITH DELIMITER ',' NULL '' CSV;
 
 -- COUPONS
-\COPY coupons(id, code, discount_type, discount_value, min_order_amount, max_uses, expiry_date, applicable_product_id) FROM 'Coupons.csv' WITH DELIMITER ',' NULL '' CSV;
+\COPY coupons(id, code, discount_type, discount_value, min_order_amount, max_uses, expiry_date, applicable_product_id) FROM 'Coupons.csv' WITH (FORMAT csv, DELIMITER ',', NULL '', FORCE_NULL(expiry_date, applicable_product_id));
 SELECT pg_catalog.setval('public.coupons_id_seq',
                          (SELECT MAX(id)+1 FROM coupons),
                          false);

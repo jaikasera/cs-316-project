@@ -127,6 +127,9 @@ CREATE TABLE order_items (
 
 CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_orders_user_status_created_at ON orders(user_id, cancelled, fulfilled, created_at DESC);
+CREATE INDEX idx_order_items_seller_order ON order_items(seller_id, order_id, fulfilled, id);
+CREATE INDEX idx_order_items_product_order ON order_items(product_id, order_id);
 
 CREATE TABLE wishlist (
     user_id INT NOT NULL REFERENCES Users(id),
@@ -157,3 +160,8 @@ CREATE TABLE coupon_uses (
 
 CREATE INDEX idx_categories_parent_id ON Categories(parent_id);
 CREATE INDEX idx_product_tags_tag_id ON ProductTags(tag_id);
+CREATE INDEX idx_inventory_product_instock_price_qty ON Inventory(product_id, price ASC, quantity DESC, seller_id) WHERE quantity > 0;
+CREATE INDEX idx_cart_items_user_saved_added_at ON cart_items(user_id, saved, added_at DESC);
+CREATE INDEX idx_purchases_uid_time_desc ON Purchases(uid, time_purchased DESC);
+CREATE INDEX idx_wishlist_user_added_at_desc ON wishlist(user_id, added_at DESC);
+CREATE INDEX idx_coupon_uses_coupon_id ON coupon_uses(coupon_id);

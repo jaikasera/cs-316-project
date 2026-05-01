@@ -76,9 +76,15 @@ def cart_page():
     coupon = {'code': None, 'valid': False, 'message': None, 'discount': 0.0, 'label': None}
     final_total = total
     if current_user.is_authenticated and current_user.id == user_id:
-        for saved in get_saved_for_later():
-            product = Product.get(saved['product_id'])
-            snapshot = CartItem.get_inventory_snapshot(saved['product_id'], saved['seller_id'])
+        session_saved_items = get_saved_for_later()
+        saved_product_ids = [saved['product_id'] for saved in session_saved_items]
+        saved_pairs = [(saved['product_id'], saved['seller_id']) for saved in session_saved_items]
+        products_by_id = {product.id: product for product in Product.get_many(saved_product_ids, available_only=False)}
+        snapshots = CartItem.get_inventory_snapshots(saved_pairs)
+
+        for saved in session_saved_items:
+            product = products_by_id.get(saved['product_id'])
+            snapshot = snapshots.get((saved['product_id'], saved['seller_id']))
             if product is None or snapshot is None:
                 continue
             available, product_name, stock_quantity, unit_price, seller_firstname, seller_lastname = snapshot

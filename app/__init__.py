@@ -6,6 +6,7 @@ from .db import DB
 
 login = LoginManager()
 login.login_view = 'users.login'
+_CACHED_TOP_LEVEL_CATEGORIES = None
 
 
 def create_app():
@@ -20,7 +21,10 @@ def create_app():
         from .models.category import Category
         from .marketplace import get_recently_viewed_ids, get_wishlist_ids
 
-        categories = Category.get_top_level()
+        global _CACHED_TOP_LEVEL_CATEGORIES
+        if _CACHED_TOP_LEVEL_CATEGORIES is None:
+            _CACHED_TOP_LEVEL_CATEGORIES = Category.get_top_level()
+        categories = _CACHED_TOP_LEVEL_CATEGORIES
         wishlist_count = len(get_wishlist_ids())
         recent_count = len(get_recently_viewed_ids())
         if not current_user.is_authenticated:
@@ -35,9 +39,7 @@ def create_app():
 
         from .models.cart import CartItem
 
-        items = CartItem.get_items_by_user(current_user.id)
-        hud_items = sum(item.quantity for item in items)
-        hud_gold = sum(item.line_total for item in items)
+        hud_items, hud_gold = CartItem.get_hud_totals(current_user.id)
         return {
             'hud_player': f'{current_user.firstname} {current_user.lastname}',
             'hud_items': hud_items,

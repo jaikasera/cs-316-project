@@ -1,4 +1,5 @@
 from flask import render_template, redirect, url_for, flash, request, session
+from types import SimpleNamespace
 from werkzeug.urls import url_parse
 from flask_login import login_user, logout_user, current_user, login_required
 from flask_wtf import FlaskForm
@@ -7,15 +8,26 @@ from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 
 from .models.user import User
 from .models.purchase import Purchase
-from .models.product import Product
 
 
 from flask import Blueprint
 bp = Blueprint('users', __name__)
 
 
+def email_or_local(form, field):
+    # Implemented as a fix to the incompatability with earlier email handling and the 
+    # .local extension for generated emails. Makes it so (for test build), .local is seen as valid
+    value = (field.data or '').strip()
+    if value.lower().endswith('.local'):
+        # Accept seeded local test accounts like user@marketplace.local
+        if '@' in value and not value.startswith('@') and not value.endswith('@'):
+            return
+        raise ValidationError('Invalid email address.')
+    Email()(form, field)
+
+
 class LoginForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    email = StringField('Email', validators=[DataRequired(), email_or_local])
     password = PasswordField('Password', validators=[DataRequired()])
     remember_me = BooleanField('Remember Me')
     submit = SubmitField('Sign In')
@@ -51,7 +63,7 @@ def login():
 class RegistrationForm(FlaskForm):
     firstname = StringField('First Name', validators=[DataRequired()])
     lastname = StringField('Last Name', validators=[DataRequired()])
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    email = StringField('Email', validators=[DataRequired(), email_or_local])
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(),
@@ -113,11 +125,14 @@ def user_purchases():
         flash('User not found')
         return redirect(url_for('index.index', user_id=user_id))
 
-    purchases = Purchase.get_all_by_uid(user_id)
+    purchases = Purchase.get_all_by_uid_with_product(user_id)
     items = []
-    for p in purchases:
-        prod = Product.get(p.pid)
-        items.append({'purchase': p, 'product': prod})
+    for row in purchases:
+        purchase = Purchase(row[0], row[1], row[2], row[3])
+        product = None
+        if row[4] is not None:
+            product = SimpleNamespace(name=row[4], price=float(row[5]) if row[5] is not None else 0.0)
+        items.append({'purchase': purchase, 'product': product})
 
     return render_template('purchases.html', purchases=items, user=user)
 

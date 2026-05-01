@@ -7,7 +7,10 @@
       <h2 class="mb-1">My Products</h2>
       <p class="text-muted mb-0">Manage the catalog items you created, including deactivating products you no longer want listed.</p>
     </div>
-    <a class="btn btn-success" href="{{ url_for('products.create_product') }}">Create Product</a>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <a class="btn btn-success" href="{{ url_for('products.create_product') }}">Create Product</a>
+      <a class="btn btn-primary" href="{{ url_for('seller_orders.seller_orders_page') }}">Seller orders</a>
+    </div>
   </div>
 
   {% if products %}
