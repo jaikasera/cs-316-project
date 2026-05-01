@@ -1,24 +1,10 @@
-from types import SimpleNamespace
-
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import current_user, login_required
 
-from .marketplace import (
-    delivery_estimate_for_listing,
-    gallery_images_for_product,
-    get_recently_viewed_ids,
-    get_wishlist_ids,
-    price_story_for_product,
-    record_recently_viewed,
-    toggle_wishlist,
-    variant_options_for_product,
-    wishlist_contains,
-)
 from .models.product import Product
 from .models.inventory import InventoryItem
 from .models.category import Category
 from .models.feedback import Feedback
-from .models.tag import Tag
 
 bp = Blueprint('products', __name__)
 
@@ -43,7 +29,6 @@ def _build_product_form_data(product=None):
             'name': (request.form.get('name') or '').strip(),
             'description': (request.form.get('description') or '').strip(),
             'image_url': (request.form.get('image_url') or '').strip(),
-            'tag_input': (request.form.get('tag_input') or '').strip(),
             'available': bool(request.form.get('available')) if product else True,
         }
 
@@ -52,7 +37,6 @@ def _build_product_form_data(product=None):
         'name': product.name if product else '',
         'description': product.description if product else '',
         'image_url': product.image_url if product and product.image_url else '',
-        'tag_input': ', '.join(Tag.get_names_for_product(product.id)) if product else '',
         'available': product.available if product else True,
     }
 
@@ -77,17 +61,12 @@ def _validate_product_form(form_data, categories):
     ):
         return 'Image URL must start with http:// or https://.'
 
-    parsed_tags = Tag.parse_input(form_data['tag_input'])
-    if len(parsed_tags) > 10:
-        return 'Keep tags to 10 or fewer focused labels.'
-
     return None
 
 
 @bp.route('/products')
 def browse_products():
     category_id = request.args.get('category_id', type=int)
-    tag_slug = request.args.get('tag', default='', type=str).strip() or None
     keyword = request.args.get('keyword', default='', type=str)
     sort_by = request.args.get('sort_by', default='price_asc', type=str)
     min_price = request.args.get('min_price', type=float)
@@ -97,16 +76,9 @@ def browse_products():
     page_raw = request.args.get('page', default=1, type=int)
     per_page_raw = request.args.get('per_page', default=25, type=int)
     page, per_page = _normalize_page_and_size(page_raw, per_page_raw)
-    allowed_sort = {'price_asc', 'price_desc', 'rating_desc', 'rating_asc', 'popularity_desc'}
-    if sort_by not in allowed_sort:
-        sort_by = 'price_asc'
-
-    category_ids = Category.get_descendant_ids(category_id) if category_id else None
 
     products, total_count = Product.search(
         category_id=category_id,
-        category_ids=category_ids,
-        tag_slug=tag_slug,
         keyword=keyword,
         sort_by=sort_by,
         min_price=min_price,
@@ -121,8 +93,6 @@ def browse_products():
         page = total_pages
         products, total_count = Product.search(
             category_id=category_id,
-            category_ids=category_ids,
-            tag_slug=tag_slug,
             keyword=keyword,
             sort_by=sort_by,
             min_price=min_price,
@@ -133,19 +103,13 @@ def browse_products():
             per_page=per_page,
         )
 
-    categories = Category.get_tree()
-    active_tags = Tag.get_all_with_usage()
-    product_tags = Tag.get_for_products([product.id for product in products])
-    for product in products:
-        product.tags = product_tags.get(product.id, [])
+    categories = Category.get_all()
 
     return render_template(
         'products.html',
         products=products,
         categories=categories,
         selected_category=category_id,
-        selected_tag=tag_slug,
-        active_tags=active_tags[:24],
         keyword=keyword,
         sort_by=sort_by,
         min_price=min_price,
@@ -156,7 +120,6 @@ def browse_products():
         per_page=per_page,
         total_count=total_count,
         total_pages=total_pages,
-        wishlist_ids=set(get_wishlist_ids()),
     )
 
 
@@ -166,17 +129,9 @@ def product_detail(product_id):
     if product is None:
         return redirect(url_for('products.browse_products'))
 
-    record_recently_viewed(product_id)
-
     review_page_raw = request.args.get('review_page', default=1, type=int)
     review_per_page_raw = request.args.get('review_per_page', default=10, type=int)
     review_sort = request.args.get('review_sort', default='date_desc', type=str)
-    review_rating = request.args.get('review_rating', type=int)
-    if review_rating not in {1, 2, 3, 4, 5}:
-        review_rating = None
-    review_with_text = request.args.get('review_with_text') == '1'
-    review_recent_only = request.args.get('review_recent_only') == '1'
-    review_verified_only = request.args.get('review_verified_only') == '1'
     review_page, review_per_page = _normalize_page_and_size(
         review_page_raw, review_per_page_raw, default_per_page=10
     )
@@ -184,24 +139,8 @@ def product_detail(product_id):
     if review_sort not in allowed_review_sort:
         review_sort = 'date_desc'
 
-    sellers = []
-    for row in InventoryItem.get_sellers_for_product(product_id):
-        seller = SimpleNamespace(**dict(row._mapping))
-        seller.delivery_estimate = delivery_estimate_for_listing(
-            seller.quantity,
-            seller.seller_avg_rating,
-            seller.price,
-        )
-        seller.low_stock = seller.quantity > 0 and seller.quantity <= 3
-        sellers.append(seller)
-
-    total_reviews = Feedback.get_product_review_count(
-        product_id,
-        filter_rating=review_rating,
-        only_with_text=review_with_text,
-        only_recent=review_recent_only,
-        only_verified=review_verified_only,
-    )
+    sellers = InventoryItem.get_sellers_for_product(product_id)
+    total_reviews = Feedback.get_product_review_count(product_id)
     review_total_pages = max(1, (total_reviews + review_per_page - 1) // review_per_page)
     if review_page > review_total_pages:
         review_page = review_total_pages
@@ -211,24 +150,11 @@ def product_detail(product_id):
         page=review_page,
         per_page=review_per_page,
         sort_by=review_sort,
-        filter_rating=review_rating,
-        only_with_text=review_with_text,
-        only_recent=review_recent_only,
-        only_verified=review_verified_only,
     )
-    reviews = [SimpleNamespace(**dict(review._mapping)) for review in reviews]
     avg_rating = Feedback.get_product_average_rating(product_id)
     user_review = None
     if current_user.is_authenticated:
         user_review = Feedback.get_product_review_by_user(product_id, current_user.id)
-
-    related_products = Product.get_related(product.id, product.category_id, limit=4)
-    bundle_suggestions = Product.get_bundle_suggestions(product.id, limit=4)
-    product_tags = Tag.get_for_product(product.id)
-    gallery_images = gallery_images_for_product(product, related_products)
-    variants = variant_options_for_product(product)
-    price_story = price_story_for_product(product, sellers)
-    wishlist_active = wishlist_contains(product.id)
 
     return render_template(
         'product_detail.html',
@@ -241,18 +167,7 @@ def product_detail(product_id):
         review_total_pages=review_total_pages,
         total_reviews=total_reviews,
         review_sort=review_sort,
-        review_rating=review_rating,
-        review_with_text=review_with_text,
-        review_recent_only=review_recent_only,
-        review_verified_only=review_verified_only,
         user_review=user_review,
-        related_products=related_products,
-        bundle_suggestions=bundle_suggestions,
-        gallery_images=gallery_images,
-        variants=variants,
-        price_story=price_story,
-        wishlist_active=wishlist_active,
-        product_tags=product_tags,
     )
 
 
@@ -281,73 +196,10 @@ def submit_product_review(product_id):
     return redirect(url_for('products.product_detail', product_id=product_id))
 
 
-@bp.route('/products/<int:product_id>/wishlist', methods=['POST'])
-def toggle_product_wishlist(product_id):
-    product = Product.get(product_id)
-    if product is None:
-        flash('That item could not be found.', 'warning')
-        return redirect(url_for('products.browse_products'))
-
-    is_saved = toggle_wishlist(product_id)
-    flash(
-        'Item saved to your wish list.' if is_saved else 'Item removed from your wish list.',
-        'success' if is_saved else 'info',
-    )
-    next_url = request.form.get('next')
-    return redirect(_safe_next_url(next_url, 'products.product_detail', product_id=product_id))
-
-
-@bp.route('/wishlist')
-def wishlist_page():
-    wishlist_ids = get_wishlist_ids()
-    products = Product.get_many(wishlist_ids, available_only=False)
-    product_tags = Tag.get_for_products([product.id for product in products])
-    for product in products:
-        product.tags = product_tags.get(product.id, [])
-    return render_template('wishlist.html', products=products, wishlist_ids=set(wishlist_ids))
-
-
-@bp.route('/labels')
-def labels_page():
-    return render_template(
-        'labels.html',
-        category_tree=Category.get_tree(),
-        tags=Tag.get_all_with_usage(),
-        leaf_categories=Category.get_leaf_categories(),
-    )
-
-
-@bp.route('/labels/tags', methods=['POST'])
-@login_required
-def create_tag():
-    raw_name = (request.form.get('display_name') or '').strip()
-    normalized = Tag.parse_input(raw_name)
-    if not normalized:
-        flash('Enter at least one valid tag name.', 'warning')
-        return redirect(url_for('products.labels_page'))
-
-    created = [Tag.create(name, created_by=current_user.id) for name in normalized]
-    flash(f'Added {len([tag for tag in created if tag])} tag label(s).', 'success')
-    return redirect(url_for('products.labels_page'))
-
-
-@bp.route('/labels/categories', methods=['POST'])
-@login_required
-def create_category():
-    name = (request.form.get('name') or '').strip()
-    parent_id = request.form.get('parent_id', type=int)
-    if len(name) < 2:
-        flash('Category names should be at least 2 characters long.', 'warning')
-        return redirect(url_for('products.labels_page'))
-    Category.create(name=name, parent_id=parent_id)
-    flash('Category label added.', 'success')
-    return redirect(url_for('products.labels_page'))
-
-
 @bp.route('/products/new', methods=['GET', 'POST'])
 @login_required
 def create_product():
-    categories = Category.get_leaf_categories()
+    categories = Category.get_all()
     form_data = _build_product_form_data()
 
     if request.method == 'POST':
@@ -369,7 +221,6 @@ def create_product():
             form_data['image_url'] or None,
             True
         )
-        Tag.sync_product_tags(product_id, form_data['tag_input'], created_by=current_user.id)
         flash('Product created successfully.', 'success')
         return redirect(url_for('products.product_detail', product_id=product_id))
 
@@ -389,7 +240,7 @@ def edit_product(product_id):
         flash('You can only edit products that you created.', 'warning')
         return redirect(url_for('products.browse_products'))
 
-    categories = Category.get_leaf_categories()
+    categories = Category.get_all()
     form_data = _build_product_form_data(product=product)
 
     if request.method == 'POST':
@@ -412,7 +263,6 @@ def edit_product(product_id):
             form_data['image_url'] or None,
             form_data['available']
         )
-        Tag.sync_product_tags(product_id, form_data['tag_input'], created_by=current_user.id)
         flash('Product updated.', 'success')
         return redirect(url_for('products.product_detail', product_id=product_id))
 
@@ -515,8 +365,6 @@ def seller_inventory_page():
         page = total_pages
 
     products = InventoryItem.get_products_for_seller(seller_id, page=page, per_page=per_page)
-    seller_stats = InventoryItem.get_storefront_stats(seller_id)
-    featured_products = InventoryItem.get_featured_products_for_seller(seller_id, limit=4)
     return render_template(
         'seller_inventory.html',
         products=products,
@@ -525,8 +373,6 @@ def seller_inventory_page():
         per_page=per_page,
         total_count=total_count,
         total_pages=total_pages,
-        seller_stats=seller_stats,
-        featured_products=featured_products,
     )
 
 

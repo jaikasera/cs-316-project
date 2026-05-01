@@ -1,36 +1,38 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="auth-shell">
-  <div class="poke-form-panel section-spacer">
-    <h1 class="poke-panel-title">TRAINER LOGIN</h1>
-    <p class="poke-subtitle">OPEN YOUR SAVE FILE AND RETURN TO THE POKE MART.</p>
 
-    <form action="" method="post" novalidate>
-      {{ form.hidden_tag() }}
-      <div class="mb-3">
-        {{ form.email.label(class_='poke-caption') }}
-        {{ form.email(class_='form-control') }}
-        {% if form.email.errors %}
-        <ul class="error-list">
-          {% for error in form.email.errors %}<li>{{ error }}</li>{% endfor %}
-        </ul>
-        {% endif %}
-      </div>
-      <div class="mb-4">
-        {{ form.password.label(class_='poke-caption') }}
-        {{ form.password(class_='form-control') }}
-        {% if form.password.errors %}
-        <ul class="error-list">
-          {% for error in form.password.errors %}<li>{{ error }}</li>{% endfor %}
-        </ul>
-        {% endif %}
-      </div>
-      <div class="d-flex flex-wrap gap-2">
-        {{ form.submit(class_='btn-poke') }}
-        <a class="btn-poke-alt" href="{{ url_for('users.register') }}" role="button">New Trainer</a>
-      </div>
-    </form>
-  </div>
-</div>
+<h1>Login</h1>
+
+<form action="" method="post" novalidate>
+  {{ form.hidden_tag() }}
+  <p>
+    {{ form.email.label }}<br/>
+    {{ form.email(size=32) }}<br/>
+    {% for error in form.email.errors %}
+    <span style="color: red;">[{{ error }}]</span>
+    {% endfor %}
+  </p>
+  <p>
+    {{ form.password.label }}<br/>
+    {{ form.password(size=32) }}<br/>
+    {% for error in form.password.errors %}
+    <span style="color: red;">[{{ error }}]</span>
+    {% endfor %}
+  </p>
+  <p>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul>
+      {% for message in messages %}
+      <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+  </p>
+  {{ form.submit(class_="btn btn-black") }}
+  <a class="btn btn-secondary" href="{{ url_for('users.register') }}" role="button">Register</a>
+</form>
+
 {% endblock %}

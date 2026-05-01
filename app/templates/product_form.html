@@ -40,11 +40,10 @@
                 <option value="">Choose a category</option>
                 {% for category in categories %}
                   <option value="{{ category.id }}" {% if form_data.category_id == category.id %}selected{% endif %}>
-                    {{ category.path_label }}
+                    {{ category.name }}
                   </option>
                 {% endfor %}
               </select>
-              <div class="form-text">Pick the most specific shelf label so browse filters and related products stay accurate.</div>
             </div>
 
             <div class="col-md-7">
@@ -56,18 +55,6 @@
                      placeholder="https://example.com/product-image.jpg"
                      value="{{ form_data.image_url }}">
               <div class="form-text">Optional, but product cards look much better with an image.</div>
-            </div>
-
-            <div class="col-12">
-              <label class="form-label" for="tag_input">Tags</label>
-              <input class="form-control"
-                     id="tag_input"
-                     type="text"
-                     name="tag_input"
-                     maxlength="240"
-                     placeholder="wireless, giftable, collector, compact"
-                     value="{{ form_data.tag_input }}">
-              <div class="form-text">Use comma-separated tags for themes, features, and shopper-friendly labels.</div>
             </div>
 
             <div class="col-12">
@@ -138,10 +125,7 @@
           <h5 class="mb-2">{{ form_data.name or 'Your product name will appear here' }}</h5>
           <p class="text-muted small mb-2">
             {% set selected = categories|selectattr('id', 'equalto', form_data.category_id)|list %}
-            {{ selected[0].path_label if selected else 'Choose a category' }}
-          </p>
-          <p class="text-muted small mb-2">
-            {{ form_data.tag_input or 'Add a few focused tags to help shoppers discover the product.' }}
+            {{ selected[0].name if selected else 'Choose a category' }}
           </p>
           <p class="mb-0 small">
             {{ form_data.description or 'Write a short, useful description so shoppers understand the product quickly.' }}

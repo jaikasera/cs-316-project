@@ -1,139 +1,77 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="poke-panel section-spacer">
-  <div class="poke-line">
-    <div>
-      <h2 class="poke-panel-title mb-2">
-        {% if seller_stats %}
-          {{ seller_stats.firstname }} {{ seller_stats.lastname }}'s Storefront
-        {% else %}
-          Seller Inventory for {{ seller_id }}
-        {% endif %}
-      </h2>
-      <p class="poke-subtitle mb-0">
-        {% if seller_stats %}
-          Based in {{ seller_stats.address }}. Showing {{ products|length }} of {{ total_count }} listings.
-        {% else %}
-          Showing {{ products|length }} of {{ total_count }} listings.
-        {% endif %}
-      </p>
-    </div>
-    <form action="{{ url_for('products.seller_inventory_page') }}" method="GET" class="d-flex flex-wrap align-items-end" style="gap:10px;">
-      <input type="hidden" name="seller_id" value="{{ seller_id }}">
-      <div>
-        <label class="poke-caption" for="per_page">Rows per page</label>
-        <select class="form-control" id="per_page" name="per_page">
-          <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
-          <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
-          <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
-          <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
-        </select>
-      </div>
-      <button class="btn-poke-alt" type="submit">Apply</button>
-    </form>
-  </div>
-</div>
+<br><br>
 
-{% if seller_stats %}
-<div class="row section-spacer">
-  <div class="col-lg-8 mb-4 mb-lg-0">
-    <div class="poke-panel h-100">
-      <h3 class="section-title mb-3">Merchant Snapshot</h3>
-      <div class="row">
-        <div class="col-md-3 mb-3">
-          <div class="poke-caption">Average rating</div>
-          <div class="poke-price" style="font-size:1.2rem;">{{ '%.1f'|format(seller_stats.avg_rating|float) }}</div>
-        </div>
-        <div class="col-md-3 mb-3">
-          <div class="poke-caption">Seller reviews</div>
-          <div class="poke-price" style="font-size:1.2rem;">{{ seller_stats.review_count }}</div>
-        </div>
-        <div class="col-md-3 mb-3">
-          <div class="poke-caption">Active listings</div>
-          <div class="poke-price" style="font-size:1.2rem;">{{ seller_stats.active_listing_count }}</div>
-        </div>
-        <div class="col-md-3 mb-3">
-          <div class="poke-caption">Stock units</div>
-          <div class="poke-price" style="font-size:1.2rem;">{{ seller_stats.total_stock_units }}</div>
-        </div>
-      </div>
-      <p class="poke-subtitle mb-0">This merchant focuses on well-stocked, ready-to-ship marketplace picks with an average shelf price of P${{ '%.2f'|format((seller_stats.avg_price or 0)|float) }}.</p>
-    </div>
-  </div>
-  <div class="col-lg-4">
-    <div class="poke-panel h-100">
-      <h3 class="section-title mb-3">Featured Shelf</h3>
-      <div class="poke-log-list">
-        {% for product in featured_products %}
-        <div class="poke-log-row">
-          <div class="poke-line">
-            <div>
-              <strong>{{ product.name }}</strong>
-              <div class="poke-caption">{{ product.quantity }} in stock</div>
-            </div>
-            <div class="text-right">
-              <div class="poke-price" style="font-size:1.15rem;">P${{ product.inventory_price }}</div>
-              <a href="{{ url_for('products.product_detail', product_id=product.product_id) }}" class="poke-caption">Open item</a>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-</div>
-{% endif %}
+<h2>Seller Inventory for {{ seller_id }}</h2>
+<p class="text-muted">
+  Showing {{ products|length }} of {{ total_count }} listings
+  (page {{ page }} of {{ total_pages }}).
+</p>
+
+<form action="{{ url_for('products.seller_inventory_page') }}" method="GET" class="form-inline mb-3">
+  <input type="hidden" name="seller_id" value="{{ seller_id }}">
+  <label class="mr-2" for="per_page">Rows per page</label>
+  <select class="form-control mr-2" id="per_page" name="per_page">
+    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+    <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+    <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+    <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+  </select>
+  <button class="btn btn-outline-secondary" type="submit">Apply</button>
+</form>
 
 {% if products and products|length > 0 %}
-<div class="browse-grid section-spacer">
-  {% for product in products %}
-    <div class="product-tile">
-      {% if product.image_url %}
-        <img class="product-thumb" src="{{ product.image_url }}" alt="{{ product.name }}">
-      {% else %}
-        <div class="product-thumb poke-image-frame">ITEM IMAGE</div>
-      {% endif %}
-      <div class="tile-title">{{ product.name }}</div>
-      <div class="poke-caption">Product ID {{ product.product_id }}</div>
-      <div class="poke-price">P${{ product.inventory_price }}</div>
-      <div class="poke-line">
-        <span class="{% if product.available and product.quantity > 0 %}poke-status-good{% else %}poke-status-bad{% endif %}">
-          {% if product.available and product.quantity > 0 %}Ready to ship{% else %}Needs restock{% endif %}
-        </span>
-        <span class="poke-caption">{{ product.quantity }} units</span>
-      </div>
+<table class='table table-hover table-bordered container'>
+  <thead class="thead-dark">
+    <tr>
+      <th>Product ID</th>
+      <th>Product Name</th>
+      <th>Price</th>
+      <th>Quantity</th>
       {% if current_user.is_authenticated and current_user.id == seller_id %}
-      <a class="btn-poke-alt mt-auto" href="{{ url_for('products.my_inventory_detail', product_id=product.product_id, page=page, per_page=per_page) }}">View / edit</a>
-      {% else %}
-      <a class="btn-poke mt-auto" href="{{ url_for('products.product_detail', product_id=product.product_id) }}">View item</a>
+      <th>Manage</th>
       {% endif %}
-    </div>
-  {% endfor %}
-</div>
+    </tr>
+  </thead>
+  <tbody>
+    {% for product in products %}
+      <tr>
+        <th scope="row">{{ product.product_id }}</th>
+        <td>{{ product.name }}</td>
+        <td>${{ product.inventory_price }}</td>
+        <td>{{ product.quantity }}</td>
+        {% if current_user.is_authenticated and current_user.id == seller_id %}
+        <td>
+          <a class="btn btn-sm btn-primary"
+             href="{{ url_for('products.my_inventory_detail', product_id=product.product_id, page=page, per_page=per_page) }}">View / edit</a>
+        </td>
+        {% endif %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% else %}
-<div class="poke-panel text-center">
-  <h3 class="section-title">No products found</h3>
-  <p class="poke-subtitle mb-0">This seller does not have live storefront listings yet.</p>
-</div>
+<p>No products found in inventory for this seller.</p>
 {% endif %}
 
 {% if total_pages > 1 %}
-<div class="poke-panel">
-  <div class="poke-line">
-    <div>
-      {% if page > 1 %}
-        <a class="btn-poke-alt" href="{{ url_for('products.seller_inventory_page', seller_id=seller_id, page=page-1, per_page=per_page) }}">Previous</a>
-      {% endif %}
-    </div>
-    <div class="poke-caption">Page {{ page }} of {{ total_pages }}</div>
-    <div>
-      {% if page < total_pages %}
-        <a class="btn-poke-alt" href="{{ url_for('products.seller_inventory_page', seller_id=seller_id, page=page+1, per_page=per_page) }}">Next</a>
-      {% endif %}
-    </div>
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <div>
+    {% if page > 1 %}
+      <a class="btn btn-outline-primary btn-sm"
+         href="{{ url_for('products.seller_inventory_page', seller_id=seller_id, page=page-1, per_page=per_page) }}">Previous</a>
+    {% endif %}
+  </div>
+  <div class="text-muted small">Page {{ page }} of {{ total_pages }}</div>
+  <div>
+    {% if page < total_pages %}
+      <a class="btn btn-outline-primary btn-sm"
+         href="{{ url_for('products.seller_inventory_page', seller_id=seller_id, page=page+1, per_page=per_page) }}">Next</a>
+    {% endif %}
   </div>
 </div>
 {% endif %}
 
 {% endblock %}
+
