@@ -261,6 +261,14 @@ def weighted_choice(values, weights):
 
 
 def weighted_sample_without_replacement(items, weights, count):
+    """
+    Draw `count` items from `items` without replacement, using `weights` as
+    selection probabilities.  Works by maintaining a shrinking pool: each
+    iteration picks a random point in [0, total_weight) and walks the pool
+    until the cumulative weight crosses that point, then removes the chosen
+    item so it cannot be selected again.  Returns up to min(count, len(items))
+    items.
+    """
     pool = list(zip(items, weights))
     chosen = []
     count = min(count, len(pool))
@@ -537,6 +545,20 @@ def gen_categories():
 
 
 def gen_products(num_products, user_profiles):
+    """
+    Generate `num_products` products and write them to Products.csv.
+
+    Each product is assigned to a weighted-random root category (high-weight
+    categories like Books and Electronics appear more often).  A `popularity`
+    score is drawn from a right-skewed beta(1.2, 4.5) distribution so most
+    products are niche, with rare spikes of high popularity.  A `quality_score`
+    is then derived from popularity plus a small random offset — this score
+    is used downstream by review generators to bias ratings (high-quality
+    products receive more 4- and 5-star reviews).  Premium products exist in
+    each category at category-specific rates and receive a price multiplier.
+
+    Returns: (products list, available_product_ids, products_by_category, popularity_weights)
+    """
     products = []
     available_product_ids = []
     products_by_category = defaultdict(list)
@@ -830,6 +852,17 @@ def gen_order_items(num_orders, user_profiles, product_listings, stocked_product
 
 
 def gen_orders(order_summaries):
+    """
+    Write pre-built order summary rows to Orders.csv.
+
+    order_summaries is produced by the order-building loop upstream, which
+    assigns each order a fulfillment probability based on age:
+      - >90 days old: 92% chance fulfilled (most old orders are complete)
+      - >30 days old: 68% chance fulfilled
+      - recent:       34% chance fulfilled (many new orders still pending)
+    A seller quality factor (±0.65) further adjusts each order's fulfillment
+    probability to simulate sellers with varying reliability.
+    """
     with open(BASE / 'Orders.csv', 'w') as f:
         writer = get_csv_writer(f)
         print('Orders...', end=' ', flush=True)

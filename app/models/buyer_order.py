@@ -44,6 +44,17 @@ class BuyerOrder:
     def get_orders_by_user(user_id, page=1, per_page=20,
                            keyword='', status='all', date_from=None, date_to=None,
                            sort_by='date_desc'):
+        """
+        Return a paginated, filtered, and sorted list of orders for a buyer.
+
+        Filters are composed dynamically as SQL clause fragments so that only the
+        WHERE conditions the caller specifies are appended — avoiding unnecessary
+        index scans on unused filters.  The keyword filter checks three fields:
+        the numeric order ID (exact match), product name (ILIKE via EXISTS), and
+        seller name (ILIKE via EXISTS).
+
+        Returns: (list[BuyerOrderSummary], total_count)
+        """
         kw = f'%{keyword}%' if keyword else None
         order_id_match = None
         if keyword and keyword.isdigit():
@@ -164,8 +175,12 @@ ORDER BY oi.id ASC
         from sqlalchemy import text
 
         try:
+            # SERIALIZABLE isolation prevents another concurrent transaction from
+            # fulfilling a line item between our "check" and our "cancel" writes,
+            # which would let us cancel an order whose items are mid-fulfillment.
             with app.db.engine.begin() as conn:
-                # Lock the order
+                # Lock the order row immediately so no concurrent cancellation or
+                # fulfillment can race against our validation checks below.
                 order = conn.execute(text('''
 SELECT id, user_id, total_amount, fulfilled, cancelled
 FROM orders

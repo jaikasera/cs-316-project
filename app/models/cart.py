@@ -336,6 +336,9 @@ FROM coupons WHERE code = :code
                         raise ValueError(f'Order must be at least ${min_order:.2f} to use this coupon.')
 
                     if max_uses is not None:
+                        # Count existing uses inside the same transaction that
+                        # holds the cart lock so two concurrent checkouts with
+                        # the same code cannot both pass the max_uses guard.
                         use_count = conn.execute(text('''
 SELECT COUNT(*) FROM coupon_uses WHERE coupon_id = :cid
 '''), {'cid': coupon_id}).fetchone()[0]
