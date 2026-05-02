@@ -101,7 +101,7 @@ def logout():
     return redirect(url_for('index.index'))
 
 
-@bp.route('/balance', methods=['GET', 'POST'])
+@bp.route('/account', methods=['GET', 'POST'])
 @login_required
 def balance():
     if request.method == 'POST':
@@ -123,7 +123,7 @@ def balance():
         sort_by='date_desc',
     )
 
-    return render_template('balance.html', recent_orders=orders)
+    return render_template('account.html', recent_orders=orders)
 
 
 @bp.route('/users/public')
