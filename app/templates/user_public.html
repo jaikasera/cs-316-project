@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<br><br>
+
+<h2>User Profile</h2>
+<p>Search for a user by account number.</p>
+
+<form method="GET" action="{{ url_for('users.public_profile') }}" class="form-inline mb-4">
+  <label class="mr-2" for="user_id"><strong>Account #:</strong></label>
+  <input type="number" id="user_id" name="user_id" class="form-control mr-2"
+         placeholder="Enter account number" min="0"
+         value="{{ request.args.get('user_id', '') }}">
+  <button type="submit" class="btn btn-dark">Search</button>
+</form>
+
+{% if user is not none %}
+  <div class="card mb-4">
+    <div class="card-body">
+      <h4 class="card-title">{{ user.firstname }} {{ user.lastname }}</h4>
+      <p class="mb-1"><strong>Account #:</strong> {{ user.id }}</p>
+      <p class="mb-0"><strong>Status:</strong> {{ 'Seller' if is_seller else 'Buyer' }}</p>
+    </div>
+  </div>
+
+  {% if is_seller %}
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Seller Details</h5>
+        <p class="mb-1"><strong>Email:</strong> {{ user.email }}</p>
+        <p class="mb-3"><strong>Address:</strong> {{ user.address }}</p>
+
+        {% if storefront %}
+          <div class="row">
+            <div class="col-md-4">
+              <p class="mb-1"><strong>Listings:</strong> {{ storefront[4] }}</p>
+            </div>
+            <div class="col-md-4">
+              <p class="mb-1"><strong>Active Listings:</strong> {{ storefront[5] }}</p>
+            </div>
+            <div class="col-md-4">
+              <p class="mb-1"><strong>Total Stock Units:</strong> {{ storefront[6] }}</p>
+            </div>
+          </div>
+        {% endif %}
+
+        <p class="mt-3 mb-0">
+          <strong>Average Rating:</strong>
+          {{ '%.2f'|format(avg_rating) if avg_rating is not none else 'N/A' }}
+          ({{ review_count }} review{{ '' if review_count == 1 else 's' }})
+        </p>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Seller Reviews</h5>
+        {% if reviews %}
+          <table class="table table-hover table-bordered">
+            <thead class="thead-dark">
+              <tr>
+                <th>Buyer</th>
+                <th>Rating</th>
+                <th>Review</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for review in reviews %}
+                <tr>
+                  <td>{{ review[6] }} {{ review[7] }}</td>
+                  <td>{{ review[3] }}/5</td>
+                  <td>{{ review[4] if review[4] else '(no review text)' }}</td>
+                  <td>{{ review[5] }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p class="mb-0">No seller reviews found.</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+
+{% endblock %}
