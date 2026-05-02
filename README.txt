@@ -127,4 +127,29 @@ Products Guru: responsible for Products — Shambhavi Sinha
     * Updated the schema/load files to support Categories with parent-child structure plus Tags and ProductTags join data.
     * Added starter taxonomy seed data in both db/data and db/generated so the new hierarchy/tag workflow is represented in the dataset as well.
     * Revamped the /products/top?k= page into a more polished “top finds” showcase with styled cards, ranking badges, and a friendlier k-selector flow.
-    
+
+Social Guru: responsible for Feedback / Messaging — Blake Passe
+    * Built out the full review lifecycle on top of the existing ProductReviews and SellerReviews schema so that buyers can now create, update, and delete their own reviews, not just submit them once.
+    * Added Feedback.delete_product_review, Feedback.upsert_seller_review, Feedback.delete_seller_review, and Feedback.get_seller_review_by_user in app/models/feedback.py, each parameterized and scoped to the (user_id, product_id) or (user_id, seller_id) unique key so a buyer can only modify their own row.
+    * Wrote Feedback.user_can_review_seller, an eligibility helper that joins orders and order_items so a buyer can only leave a seller review if they actually have an order containing an item fulfilled by that seller, replacing the older Inventory-based heuristic now that the orders schema exists.
+    * Added Feedback.get_my_reviews, a single SQL query that UNIONs ProductReviews and SellerReviews with their target product name or seller display name and returns one combined, reverse-chronological list — used to power the new My Reviews page without needing two round trips.
+    * Added POST /products/<id>/review/delete in app/products.py with login_required, existence checks, and consistent flash-category messaging so buyers can remove their own product review from the product detail page.
+    * Added POST /sellers/<id>/review and POST /sellers/<id>/review/delete in app/users.py, including server-side input validation (1–5 rating, optional text), self-review prevention, eligibility enforcement, upsert vs first-time messaging, and flash feedback for every outcome.
+    * Updated /users/public to pre-compute the visiting buyer’s own seller review and eligibility status, so the seller profile page can render the right form state (submit vs update vs ineligible vs not-logged-in) without doing extra requests in the template.
+    * Added GET /social/my-reviews in app/social.py, a login-required page that consolidates every review the current user has written across both products and sellers into one timeline.
+    * Created app/templates/my_reviews.html, a polished table that lists Type, Target (linked to the product or seller), star rating with N/5 score, review text (or a “(no review text)” placeholder), date, and per-row Edit + Delete actions — with deep links that jump straight into the corresponding review form via the new #review-form / #seller-review-form anchors.
+    * Updated app/templates/user_public.html to render a buyer-facing seller review card right above the existing reviews list: a star-rating dropdown, optional review text area, a Submit/Update button, and (when applicable) a separate non-nested Delete Review form, all gated on eligibility and on the visitor not being the seller themselves.
+    * Updated app/templates/product_detail.html with an explicit Delete My Note button under the existing TRAINER NOTES form, plus an id=“review-form” anchor so review-related deep links scroll directly to the form instead of dumping the user at the top of the page.
+    * Updated app/templates/order_detail.html so that every line item in a buyer’s order now exposes Review product and Review seller links pointing at the right product or seller review form, dramatically shortening the path from “I just bought this” to “here is my review”.
+    * Updated app/templates/account.html with a new My Reviews card containing a one-click Open My Reviews button, so buyers can find their own review history straight from the account dashboard.
+    * Updated app/templates/base.html to add a 📒 My Reviews link in the global category nav strip for authenticated users, so the page is reachable from anywhere in the storefront.
+    * Wired confirmation prompts (window.confirm) onto every destructive delete form across the new templates so a misclick can not silently wipe out a review.
+    * Made sure delete buttons that appear inside review cards are placed in their own <form> blocks rather than nested inside the submit form, fixing a quietly invalid-HTML pattern that older versions of the page would have hit if they had supported delete.
+    * Aligned all new flash-message categories (success, warning, danger) with the Bootstrap classes the rest of the app uses, so the new endpoints render with the same color treatment as other team members’ pages.
+    * Reused the existing UNION ALL pattern from Feedback.get_recent_by_uid for the new combined My Reviews query, so the codebase keeps a single, consistent way of mixing product and seller feedback.
+    * Kept verified-purchase and per-product review summary logic compatible with the larger Final Submission seed dataset so star averages and review counts continue to render correctly under heavier load.
+    * Made the visitor experience work cleanly for both signed-in and anonymous users on every social page: anonymous viewers can still read product and seller reviews and see ratings, but every write/edit/delete entry point only appears to authenticated buyers.
+    * Verified the new endpoints against the existing seller storefront and order history pages so review entry points appear in every place a buyer naturally lands after a purchase, not just on the product detail page.
+    * Updated this README with a Social Guru section describing every shipping change above, and added an explicit acknowledgement that LLM tools were used for assistance during this assignment.
+
+LLMs were used to assist with this assignment.
