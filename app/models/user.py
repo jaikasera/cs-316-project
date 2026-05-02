@@ -11,12 +11,13 @@ class User(UserMixin):
     MAX_BALANCE = Decimal('999999999999.99')
     _AMOUNT_PATTERN = re.compile(r'^\d+(?:\.\d{1,2})?$')
 
-    def __init__(self, id, email, firstname, lastname, balance):
+    def __init__(self, id, email, firstname, lastname, balance, address=None):
         self.id = id
         self.email = email
         self.firstname = firstname
         self.lastname = lastname
         self.balance = balance
+        self.address = address
 
     @staticmethod
     def get_by_auth(email, password):
@@ -70,7 +71,7 @@ RETURNING id
     @login.user_loader
     def get(id):
         rows = app.db.execute("""
-SELECT id, email, firstname, lastname, balance
+SELECT id, email, firstname, lastname, balance, address
 FROM Users
 WHERE id = :id
 """,

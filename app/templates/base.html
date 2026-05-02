@@ -327,6 +327,10 @@
       background: linear-gradient(180deg, #ff7056 0%, #ef493d 100%);
     }
 
+    .util-link.logout {
+      background: linear-gradient(180deg, #ff8673 0%, #ee5d4c 100%);
+    }
+
     .util-icon {
       font-size: 1.65rem;
       line-height: 1;
@@ -1545,6 +1549,13 @@
                   <div class="util-text">
                     <span class="util-label">Trainer</span>
                     <span class="util-value">{{ current_user.firstname }}</span>
+                  </div>
+                </a>
+                <a class="util-link logout" href="{{ url_for('users.logout') }}">
+                  <div class="util-icon">↩</div>
+                  <div class="util-text">
+                    <span class="util-label">Account</span>
+                    <span class="util-value">Log Out</span>
                   </div>
                 </a>
               {% else %}

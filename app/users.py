@@ -8,6 +8,9 @@ from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 
 from .models.user import User
 from .models.purchase import Purchase
+from .models.buyer_order import BuyerOrder
+from .models.inventory import InventoryItem
+from .models.feedback import Feedback
 
 
 from flask import Blueprint
@@ -113,7 +116,53 @@ def balance():
 
         return redirect(url_for('users.balance'))
 
-    return render_template('balance.html')
+    orders, _ = BuyerOrder.get_orders_by_user(
+        current_user.id,
+        page=1,
+        per_page=10,
+        sort_by='date_desc',
+    )
+
+    return render_template('balance.html', recent_orders=orders)
+
+
+@bp.route('/users/public')
+def public_profile():
+    user_id = request.args.get('user_id', type=int)
+    if user_id is None:
+        return render_template('user_public.html', user=None)
+
+    user = User.get(user_id)
+    if user is None:
+        flash(f'No user found with ID {user_id}.')
+        return render_template('user_public.html', user=None)
+
+    storefront = InventoryItem.get_storefront_stats(user_id)
+    is_seller = False
+    if storefront is not None:
+        listing_count = storefront[4]
+        active_listing_count = storefront[5]
+        review_count_from_storefront = storefront[9]
+        is_seller = bool(listing_count or active_listing_count or review_count_from_storefront)
+
+    reviews = []
+    avg_rating = None
+    review_count = 0
+    if is_seller:
+        review_count = Feedback.get_seller_review_count(user_id)
+        avg_rating = Feedback.get_seller_average_rating(user_id)
+        if review_count:
+            reviews = Feedback.get_seller_reviews(user_id, page=1, per_page=review_count)
+
+    return render_template(
+        'user_public.html',
+        user=user,
+        is_seller=is_seller,
+        storefront=storefront,
+        reviews=reviews,
+        review_count=review_count,
+        avg_rating=avg_rating,
+    )
 
 
 @bp.route('/user_purchases')
