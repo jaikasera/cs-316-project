@@ -297,6 +297,121 @@ LIMIT :limit
         )
         return Product._rows_to_products(rows)
 
+    _PORTAL_IDS_CTE_ALL = '''
+WITH portal_ids AS (
+    SELECT id AS product_id FROM Products WHERE creator_id = :seller_id
+    UNION
+    SELECT i.product_id FROM Inventory i WHERE i.seller_id = :seller_id
+    UNION
+    SELECT oi.product_id FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id AND o.cancelled = FALSE
+    WHERE oi.seller_id = :seller_id
+)
+'''
+
+    _VALID_PORTAL_FILTERS = frozenset({'all', 'created', 'listed', 'out_of_stock'})
+
+    @staticmethod
+    def normalize_portal_filter(portal_filter):
+        pf = (portal_filter or 'all')
+        if isinstance(pf, str):
+            pf = pf.strip().lower()
+        if pf not in Product._VALID_PORTAL_FILTERS:
+            return 'all'
+        return pf
+
+    @staticmethod
+    def _portal_ids_cte(portal_filter: str) -> str:
+        if portal_filter == 'created':
+            return '''
+WITH portal_ids AS (
+    SELECT id AS product_id FROM Products WHERE creator_id = :seller_id
+)
+'''
+        if portal_filter == 'listed':
+            return '''
+WITH portal_ids AS (
+    SELECT i.product_id FROM Inventory i WHERE i.seller_id = :seller_id
+)
+'''
+        if portal_filter == 'out_of_stock':
+            return '''
+WITH portal_ids AS (
+    SELECT i.product_id FROM Inventory i
+    WHERE i.seller_id = :seller_id AND i.quantity = 0
+)
+'''
+        return Product._PORTAL_IDS_CTE_ALL
+
+    @staticmethod
+    def get_seller_portal_catalog_page(seller_id, page=1, per_page=5, portal_filter='all'):
+        """
+        Paginated Sellers Portal catalog.
+        portal_filter: all — created ∪ inventory ∪ sold; created — you created;
+        listed — you have an inventory row; out_of_stock — inventory row with qty 0.
+        Returns (products, total_count, effective_page).
+        """
+        portal_filter = Product.normalize_portal_filter(portal_filter)
+        page = max(1, page or 1)
+        per_page = per_page or 5
+        if per_page not in (5, 10, 25, 50):
+            per_page = 5
+        offset = (page - 1) * per_page
+        cte = Product._portal_ids_cte(portal_filter)
+
+        count_rows = app.db.execute(
+            cte
+            + '''
+SELECT COUNT(*) FROM portal_ids pi
+JOIN Products p ON p.id = pi.product_id
+''',
+            seller_id=seller_id,
+        )
+        total_count = int(count_rows[0][0] or 0) if count_rows else 0
+
+        if total_count == 0:
+            return [], 0, 1
+
+        total_pages = max(1, (total_count + per_page - 1) // per_page)
+        effective_page = min(page, total_pages)
+        offset = (effective_page - 1) * per_page
+
+        rows = app.db.execute(
+            cte
+            + '''
+SELECT p.id FROM portal_ids pi
+JOIN Products p ON p.id = pi.product_id
+ORDER BY p.id DESC
+LIMIT :limit OFFSET :offset
+''',
+            seller_id=seller_id,
+            limit=per_page,
+            offset=offset,
+        )
+        ids = [r[0] for r in rows]
+        products = Product.get_many(ids) if ids else []
+        inv_rows = app.db.execute(
+            '''
+SELECT product_id, quantity FROM Inventory
+WHERE seller_id = :seller_id AND product_id = ANY(:ids)
+''',
+            seller_id=seller_id,
+            ids=ids,
+        )
+        listing_set = set()
+        oos_set = set()
+        for r in inv_rows:
+            pid = int(r[0])
+            qty = int(r[1] or 0)
+            if qty > 0:
+                listing_set.add(pid)
+            else:
+                oos_set.add(pid)
+        for p in products:
+            p.seller_is_listing = p.id in listing_set
+            p.seller_out_of_stock = p.id in oos_set
+        return products, total_count, effective_page
+
     @staticmethod
     def get_recent(limit=5):
         rows = app.db.execute(
