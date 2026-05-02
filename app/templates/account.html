@@ -4,6 +4,32 @@
 <div class="container mt-4">
 	<div class="row justify-content-center">
 		<div class="col-md-8 col-lg-6">
+			<div class="card mb-4">
+				<div class="card-body">
+					<h3 class="card-title mb-3">My Account</h3>
+					<table class="table table-sm mb-0">
+						<tbody>
+							<tr>
+								<th style="width: 35%">User ID</th>
+								<td>{{ current_user.id }}</td>
+							</tr>
+							<tr>
+								<th>Full Name</th>
+								<td>{{ current_user.firstname }} {{ current_user.lastname }}</td>
+							</tr>
+							<tr>
+								<th>Email</th>
+								<td>{{ current_user.email }}</td>
+							</tr>
+							<tr>
+								<th>Address</th>
+								<td>{{ current_user.address if current_user.address else '—' }}</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
 			<div class="card">
 				<div class="card-body">
 					<h3 class="card-title mb-3">Manage Account Balance</h3>
