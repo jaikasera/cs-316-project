@@ -52,6 +52,40 @@
       </div>
     </div>
 
+    {% if current_user.is_authenticated and current_user.id != user.id %}
+      <div class="card mb-4" id="seller-review-form">
+        <div class="card-body">
+          <h5 class="card-title">{% if own_seller_review %}Update Your Review{% else %}Leave a Seller Review{% endif %}</h5>
+          {% if eligible_to_review %}
+            <form method="POST" action="{{ url_for('users.submit_seller_review', seller_id=user.id) }}">
+              <div class="form-group">
+                <label for="rating"><strong>Rating</strong></label>
+                <select id="rating" name="rating" class="form-control" required>
+                  {% for v in [5,4,3,2,1] %}
+                    <option value="{{ v }}" {% if own_seller_review and own_seller_review[3] == v %}selected{% endif %}>{{ v }} Star{{ '' if v == 1 else 's' }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="review"><strong>Review (optional)</strong></label>
+                <textarea id="review" name="review" class="form-control" rows="3"
+                          placeholder="Share your experience with this seller.">{{ own_seller_review[4] if own_seller_review and own_seller_review[4] else '' }}</textarea>
+              </div>
+              <button type="submit" class="btn btn-success">{% if own_seller_review %}Update Review{% else %}Submit Review{% endif %}</button>
+            </form>
+            {% if own_seller_review %}
+              <form method="POST" action="{{ url_for('users.delete_seller_review', seller_id=user.id) }}"
+                    style="display:inline;" onsubmit="return confirm('Delete your seller review?');" class="mt-2">
+                <button type="submit" class="btn btn-outline-danger">Delete Review</button>
+              </form>
+            {% endif %}
+          {% else %}
+            <p class="mb-0">You can review this seller after you purchase a product they sold.</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
     <div class="card mb-4">
       <div class="card-body">
         <h5 class="card-title">Seller Reviews</h5>

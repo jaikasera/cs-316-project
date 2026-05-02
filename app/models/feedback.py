@@ -264,3 +264,95 @@ FROM SellerReviews
 WHERE seller_id = :seller_id
 ''', seller_id=seller_id)
         return rows[0] if rows else (0, 0)
+
+    @staticmethod
+    def delete_product_review(product_id, user_id):
+        rows = app.db.execute('''
+DELETE FROM ProductReviews
+WHERE product_id = :product_id AND user_id = :user_id
+''', product_id=product_id, user_id=user_id)
+        return rows == 1
+
+    @staticmethod
+    def get_seller_review_by_user(seller_id, user_id):
+        rows = app.db.execute('''
+SELECT id, user_id, seller_id, rating, review, created_at
+FROM SellerReviews
+WHERE seller_id = :seller_id AND user_id = :user_id
+''', seller_id=seller_id, user_id=user_id)
+        return rows[0] if rows else None
+
+    @staticmethod
+    def upsert_seller_review(seller_id, user_id, rating, review):
+        rows = app.db.execute('''
+INSERT INTO SellerReviews (user_id, seller_id, rating, review)
+VALUES (:user_id, :seller_id, :rating, :review)
+ON CONFLICT (user_id, seller_id)
+DO UPDATE SET
+    rating = EXCLUDED.rating,
+    review = EXCLUDED.review,
+    created_at = CURRENT_TIMESTAMP
+RETURNING id
+''', seller_id=seller_id, user_id=user_id, rating=rating, review=review)
+        return rows[0][0] if rows else None
+
+    @staticmethod
+    def delete_seller_review(seller_id, user_id):
+        rows = app.db.execute('''
+DELETE FROM SellerReviews
+WHERE seller_id = :seller_id AND user_id = :user_id
+''', seller_id=seller_id, user_id=user_id)
+        return rows == 1
+
+    @staticmethod
+    def user_can_review_seller(user_id, seller_id):
+        rows = app.db.execute('''
+SELECT 1
+FROM orders o
+JOIN order_items oi ON oi.order_id = o.id
+WHERE o.user_id = :user_id AND oi.seller_id = :seller_id
+LIMIT 1
+''', user_id=user_id, seller_id=seller_id)
+        return bool(rows)
+
+    @staticmethod
+    def get_my_reviews(user_id):
+        rows = app.db.execute('''
+SELECT 'product' AS kind,
+       pr.id,
+       pr.product_id AS target_id,
+       p.name AS target_name,
+       pr.rating,
+       pr.review,
+       pr.created_at
+FROM ProductReviews pr
+JOIN Products p ON p.id = pr.product_id
+WHERE pr.user_id = :user_id
+
+UNION ALL
+
+SELECT 'seller' AS kind,
+       sr.id,
+       sr.seller_id AS target_id,
+       (u.firstname || ' ' || u.lastname) AS target_name,
+       sr.rating,
+       sr.review,
+       sr.created_at
+FROM SellerReviews sr
+JOIN Users u ON u.id = sr.seller_id
+WHERE sr.user_id = :user_id
+
+ORDER BY created_at DESC
+''', user_id=user_id)
+        return [
+            {
+                'kind': r[0],
+                'id': r[1],
+                'target_id': r[2],
+                'target_name': r[3],
+                'rating': r[4],
+                'review': r[5],
+                'created_at': r[6],
+            }
+            for r in rows
+        ]

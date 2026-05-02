@@ -154,6 +154,16 @@ def public_profile():
         if review_count:
             reviews = Feedback.get_seller_reviews(user_id, page=1, per_page=review_count)
 
+    own_seller_review = None
+    eligible_to_review = False
+    if (
+        is_seller
+        and current_user.is_authenticated
+        and current_user.id != user_id
+    ):
+        own_seller_review = Feedback.get_seller_review_by_user(user_id, current_user.id)
+        eligible_to_review = Feedback.user_can_review_seller(current_user.id, user_id)
+
     return render_template(
         'user_public.html',
         user=user,
@@ -162,7 +172,51 @@ def public_profile():
         reviews=reviews,
         review_count=review_count,
         avg_rating=avg_rating,
+        own_seller_review=own_seller_review,
+        eligible_to_review=eligible_to_review,
     )
+
+
+@bp.route('/sellers/<int:seller_id>/review', methods=['POST'])
+@login_required
+def submit_seller_review(seller_id):
+    seller = User.get(seller_id)
+    if seller is None:
+        flash('Seller not found.', 'warning')
+        return redirect(url_for('index.index'))
+    if seller_id == current_user.id:
+        flash('You cannot review yourself.', 'warning')
+        return redirect(url_for('users.public_profile', user_id=seller_id))
+    if not Feedback.user_can_review_seller(current_user.id, seller_id):
+        flash('You can only review sellers you have purchased from.', 'warning')
+        return redirect(url_for('users.public_profile', user_id=seller_id))
+
+    rating = request.form.get('rating', type=int)
+    review_text = (request.form.get('review') or '').strip() or None
+    if rating is None or rating < 1 or rating > 5:
+        flash('Choose a rating from 1 to 5 stars.', 'danger')
+        return redirect(url_for('users.public_profile', user_id=seller_id))
+
+    is_update = Feedback.get_seller_review_by_user(seller_id, current_user.id) is not None
+    Feedback.upsert_seller_review(seller_id, current_user.id, rating, review_text)
+    if is_update:
+        flash('Your seller review was updated.', 'success')
+    else:
+        flash('Thanks for reviewing this seller.', 'success')
+    return redirect(url_for('users.public_profile', user_id=seller_id))
+
+
+@bp.route('/sellers/<int:seller_id>/review/delete', methods=['POST'])
+@login_required
+def delete_seller_review(seller_id):
+    if Feedback.get_seller_review_by_user(seller_id, current_user.id) is None:
+        flash('You have no review to delete for this seller.', 'warning')
+        return redirect(url_for('users.public_profile', user_id=seller_id))
+    if Feedback.delete_seller_review(seller_id, current_user.id):
+        flash('Your seller review was deleted.', 'success')
+    else:
+        flash('Could not delete your review. Please try again.', 'danger')
+    return redirect(url_for('users.public_profile', user_id=seller_id))
 
 
 @bp.route('/user_purchases')

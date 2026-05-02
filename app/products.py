@@ -282,6 +282,20 @@ def submit_product_review(product_id):
     return redirect(url_for('products.product_detail', product_id=product_id))
 
 
+@bp.route('/products/<int:product_id>/review/delete', methods=['POST'])
+@login_required
+def delete_product_review(product_id):
+    if Feedback.get_product_review_by_user(product_id, current_user.id) is None:
+        flash('You have no review to delete on this product.', 'warning')
+        return redirect(url_for('products.product_detail', product_id=product_id))
+
+    if Feedback.delete_product_review(product_id, current_user.id):
+        flash('Your review was deleted.', 'success')
+    else:
+        flash('Could not delete your review. Please try again.', 'danger')
+    return redirect(url_for('products.product_detail', product_id=product_id))
+
+
 @bp.route('/products/<int:product_id>/wishlist', methods=['POST'])
 def toggle_product_wishlist(product_id):
     product = Product.get(product_id)

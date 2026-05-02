@@ -62,8 +62,16 @@
   <tbody>
     {% for item in line_items %}
       <tr>
-        <td><a href="{{ url_for('products.product_detail', product_id=item.product_id) }}">{{ item.product_name }}</a></td>
-        <td>{{ item.seller_name }} (ID: {{ item.seller_id }})</td>
+        <td>
+          <a href="{{ url_for('products.product_detail', product_id=item.product_id) }}">{{ item.product_name }}</a>
+          <br>
+          <a class="small" href="{{ url_for('products.product_detail', product_id=item.product_id) }}#review-form">Review product</a>
+        </td>
+        <td>
+          {{ item.seller_name }} (ID: {{ item.seller_id }})
+          <br>
+          <a class="small" href="{{ url_for('users.public_profile', user_id=item.seller_id) }}#seller-review-form">Review seller</a>
+        </td>
         <td>{{ item.quantity }}</td>
         <td>${{ "%.2f"|format(item.unit_price|float) }}</td>
         <td>${{ "%.2f"|format(item.line_total) }}</td>

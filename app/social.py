@@ -1,5 +1,6 @@
 from flask import render_template, request, flash, redirect, url_for
 from flask import Blueprint
+from flask_login import current_user, login_required
 
 from .models.feedback import Feedback
 from .models.user import User
@@ -60,3 +61,10 @@ def user_feedback_all():
         total_count=total_count,
         total_pages=total_pages,
     )
+
+
+@bp.route('/social/my-reviews')
+@login_required
+def my_reviews():
+    reviews = Feedback.get_my_reviews(current_user.id)
+    return render_template('my_reviews.html', reviews=reviews)

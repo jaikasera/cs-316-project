@@ -79,6 +79,14 @@
 
 			<div class="card mt-4">
 				<div class="card-body">
+					<h4 class="card-title mb-3">My Reviews</h4>
+					<p class="mb-2">View, edit, or delete every review you have written.</p>
+					<a class="btn btn-outline-primary" href="{{ url_for('social.my_reviews') }}">Open My Reviews</a>
+				</div>
+			</div>
+
+			<div class="card mt-4">
+				<div class="card-body">
 					<h4 class="card-title mb-3">Find a User Profile</h4>
 					<h5 class="card-subtitle mb-3 text-muted">My account ID: {{ current_user.id }}</h5>
 					<form method="GET" action="{{ url_for('users.public_profile') }}" class="form-inline">

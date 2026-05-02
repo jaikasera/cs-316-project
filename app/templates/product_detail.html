@@ -274,7 +274,7 @@
   <div class="poke-form-panel section-spacer">
     <h3 class="poke-panel-title">TRAINER NOTES</h3>
     {% if current_user.is_authenticated %}
-      <form action="{{ url_for('products.submit_product_review', product_id=product.id) }}" method="POST" class="row">
+      <form id="review-form" action="{{ url_for('products.submit_product_review', product_id=product.id) }}" method="POST" class="row">
         <div class="col-md-3 mb-3">
           <label class="poke-caption" for="rating">STAR RATING</label>
           <select class="form-control" id="rating" name="rating" required>
@@ -293,6 +293,13 @@
           <button class="btn-poke" type="submit">{% if user_review %}Update Note{% else %}Save Note{% endif %}</button>
         </div>
       </form>
+      {% if user_review %}
+        <form action="{{ url_for('products.delete_product_review', product_id=product.id) }}"
+              method="POST" class="mt-2"
+              onsubmit="return confirm('Delete your review for this product?');">
+          <button class="btn btn-outline-danger btn-sm" type="submit">Delete My Note</button>
+        </form>
+      {% endif %}
     {% else %}
       <p class="poke-subtitle mb-0"><a href="{{ url_for('users.login') }}">LOG IN</a> TO WRITE A TRAINER NOTE.</p>
     {% endif %}
