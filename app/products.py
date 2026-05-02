@@ -16,6 +16,7 @@ from .marketplace import (
 )
 from .models.product import Product
 from .models.inventory import InventoryItem
+from .models.seller_analytics import SellerPortalAnalytics
 from .models.category import Category
 from .models.feedback import Feedback
 from .models.tag import Tag
@@ -449,8 +450,48 @@ def deactivate_product(product_id):
 @bp.route('/products/my')
 @login_required
 def my_products():
-    products = Product.get_by_creator(current_user.id)
-    return render_template('my_products.html', products=products)
+    seller_id = current_user.id
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=5, type=int)
+    if page is None or page < 1:
+        page = 1
+    if per_page not in (5, 10, 25, 50):
+        per_page = 5
+
+    catalog_filter = Product.normalize_portal_filter(
+        request.args.get('catalog_filter', default='all', type=str)
+    )
+    products, portal_total, portal_page = Product.get_seller_portal_catalog_page(
+        seller_id, page=page, per_page=per_page, portal_filter=catalog_filter
+    )
+    portal_total_pages = max(1, (portal_total + per_page - 1) // per_page) if portal_total else 1
+
+    seller_summary = SellerPortalAnalytics.get_summary(seller_id)
+    seller_by_product = SellerPortalAnalytics.get_sales_by_product(seller_id)
+    seller_monthly = SellerPortalAnalytics.get_monthly_trend(seller_id, months=6)
+    seller_max_month_units = max((m['units'] for m in seller_monthly), default=0) or 1
+    seller_max_popularity = max(
+        (p['orders_last_30d'] for p in seller_by_product),
+        default=0,
+    ) or 1
+    start_idx = (portal_page - 1) * per_page + 1 if portal_total else 0
+    end_idx = min(portal_page * per_page, portal_total)
+    return render_template(
+        'my_products.html',
+        products=products,
+        portal_total=portal_total,
+        portal_page=portal_page,
+        portal_per_page=per_page,
+        portal_total_pages=portal_total_pages,
+        portal_range_start=start_idx,
+        portal_range_end=end_idx,
+        seller_summary=seller_summary,
+        seller_by_product=seller_by_product,
+        seller_monthly=seller_monthly,
+        seller_max_month_units=seller_max_month_units,
+        seller_max_popularity=seller_max_popularity,
+        portal_catalog_filter=catalog_filter,
+    )
 
 
 @bp.route('/products/top/<int:k>')
@@ -662,8 +703,10 @@ def my_inventory_remove(product_id):
         flash('Listing not found.', 'warning')
     else:
         flash('Removed this product from your inventory.', 'success')
+    next_url = request.form.get('next')
     return redirect(
-        url_for(
+        _safe_next_url(
+            next_url,
             'products.seller_inventory_page',
             seller_id=current_user.id,
             page=page,

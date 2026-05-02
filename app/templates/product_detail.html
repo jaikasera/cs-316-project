@@ -199,9 +199,12 @@
                 <div class="stock-bar-fill" style="width: {{ hp_width }}%;"></div>
               </div>
               <div class="poke-line">
-                <span class="{% if product.available and seller.quantity > 0 %}poke-status-good{% else %}poke-status-bad{% endif %}">
-                  {% if not product.available %}RETIRED ITEM{% elif seller.quantity > 0 %}READY TO BUY{% else %}OUT OF STOCK{% endif %}
-                </span>
+                <div class="d-flex flex-wrap align-items-center" style="gap: 10px;">
+                  <span class="{% if product.available and seller.quantity > 0 %}poke-status-good{% else %}poke-status-bad{% endif %}">
+                    {% if not product.available %}RETIRED ITEM{% elif seller.quantity > 0 %}READY TO BUY{% else %}OUT OF STOCK{% endif %}
+                  </span>
+                  <a class="btn-poke-alt" href="{{ url_for('products.seller_inventory_page', seller_id=seller.seller_id) }}" style="font-size: 0.95rem; padding: 6px 14px;">View Storefront</a>
+                </div>
                 {% if product.available and seller.quantity > 0 %}
                   <form action="{{ url_for('carts.add_to_cart') }}" method="POST" class="d-flex flex-wrap gap-2 align-items-center">
                     <input type="hidden" name="product_id" value="{{ product.id }}">

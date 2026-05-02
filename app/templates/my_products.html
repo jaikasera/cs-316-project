@@ -1,90 +1,265 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="container mt-4 mb-5">
-  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-    <div>
-      <h2 class="mb-1">My Products</h2>
-      <p class="text-muted mb-0">Manage the catalog items you created, including deactivating products you no longer want listed.</p>
-    </div>
-    <div class="d-flex flex-wrap gap-2 align-items-center">
-      <a class="btn btn-success" href="{{ url_for('products.create_product') }}">Create Product</a>
-      <a class="btn btn-primary" href="{{ url_for('seller_orders.seller_orders_page') }}">Seller orders</a>
+<div class="container">
+  <div class="poke-panel section-spacer">
+    <div class="poke-line mb-3 align-items-start flex-wrap" style="gap: 16px;">
+      <div>
+        <h2 class="poke-panel-title mb-2">My products</h2>
+        <p class="poke-subtitle mb-0">
+          Every SKU you <strong>created</strong>, <strong>stock in your inventory</strong>, or have <strong>sold</strong> as the seller. Marketplace stats (price from, ratings, seller count) are global.
+          Use <strong>Edit</strong> / <strong>Deactivate</strong> only on items you created (deactivate hides the product for <em>everyone</em>).
+          <strong>Remove from inventory</strong> deletes only <em>your</em> storefront row; other sellers and past orders are unchanged.
+          Open <strong>Storefront</strong> to add or change prices and quantities.
+        </p>
+      </div>
+      <div class="d-flex flex-wrap align-items-center" style="gap: 10px;">
+        <a class="btn-poke" href="{{ url_for('products.create_product') }}">Create product</a>
+        <a class="btn-poke-alt" href="{{ url_for('products.seller_inventory_page', seller_id=current_user.id) }}">Storefront</a>
+        <a class="btn-poke-alt" href="{{ url_for('seller_orders.seller_orders_page') }}">Seller orders</a>
+      </div>
     </div>
   </div>
 
-  {% if products %}
-  <div class="table-responsive">
-    <table class='table table-hover table-bordered'>
-      <thead class="thead-light">
-        <tr>
-          <th>ID</th>
-          <th>Name</th>
-          <th>Status</th>
-          <th>Category</th>
-          <th>Lowest Price</th>
-          <th>Average Rating</th>
-          <th>Sellers</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for product in products %}
-        <tr>
-          <td>{{ product.id }}</td>
-          <td>{{ product.name }}</td>
-          <td>
+  <div class="poke-panel section-spacer">
+    <div class="poke-line mb-3 align-items-start flex-wrap" style="gap: 12px;">
+      <div>
+        <h3 class="poke-panel-title mb-2">Your products</h3>
+        <p class="poke-subtitle mb-0">
+          Filter narrows this list only. <strong>All products</strong> matches <strong>Sales &amp; popularity</strong> below (created, inventory, or sold). Other options limit to what you created, what is in your inventory, or listings with zero stock.
+        </p>
+      </div>
+      <form action="{{ url_for('products.my_products') }}" method="GET" class="d-flex flex-wrap align-items-end" style="gap: 10px;">
+        <div>
+          <label class="poke-caption d-block mb-1" for="portal_catalog_filter">Show</label>
+          <select class="form-control" id="portal_catalog_filter" name="catalog_filter" onchange="this.form.submit()">
+            <option value="all" {% if portal_catalog_filter == 'all' %}selected{% endif %}>All products</option>
+            <option value="created" {% if portal_catalog_filter == 'created' %}selected{% endif %}>You created</option>
+            <option value="listed" {% if portal_catalog_filter == 'listed' %}selected{% endif %}>In your inventory</option>
+            <option value="out_of_stock" {% if portal_catalog_filter == 'out_of_stock' %}selected{% endif %}>Out of stock</option>
+          </select>
+        </div>
+        <div>
+          <label class="poke-caption d-block mb-1" for="portal_per_page">Per page</label>
+          <select class="form-control" id="portal_per_page" name="per_page" onchange="this.form.submit()">
+            <option value="5" {% if portal_per_page == 5 %}selected{% endif %}>5</option>
+            <option value="10" {% if portal_per_page == 10 %}selected{% endif %}>10</option>
+            <option value="25" {% if portal_per_page == 25 %}selected{% endif %}>25</option>
+            <option value="50" {% if portal_per_page == 50 %}selected{% endif %}>50</option>
+          </select>
+        </div>
+        <input type="hidden" name="page" value="1">
+      </form>
+    </div>
+    {% if portal_total > 0 %}
+    <p class="poke-caption mb-3">
+      Showing {{ portal_range_start }}–{{ portal_range_end }} of {{ portal_total }}
+      (page {{ portal_page }} of {{ portal_total_pages }}).
+    </p>
+    <div class="poke-log-list">
+      {% for product in products %}
+      <div class="poke-log-row">
+        <div class="poke-line mb-2 align-items-start flex-wrap" style="gap: 12px;">
+          <div style="min-width: 0;">
+            <div class="poke-caption mb-1 d-flex flex-wrap align-items-center" style="gap: 6px;">
+              <span>ID {{ product.id }}</span>
+              {% if product.creator_id == current_user.id %}
+              <span class="poke-status-featured" style="font-size: 0.72rem; padding: 2px 8px;">You created</span>
+              {% endif %}
+              {% if product.seller_is_listing %}
+              <span class="poke-status-selling" style="font-size: 0.72rem; padding: 2px 8px;">You are selling</span>
+              {% endif %}
+              {% if product.seller_out_of_stock %}
+              <span class="poke-status-out-stock" style="font-size: 0.72rem; padding: 2px 8px;">Out of stock</span>
+              {% endif %}
+            </div>
+            <strong style="font-size: 1.15rem;">
+              <a href="{{ url_for('products.product_detail', product_id=product.id) }}">{{ product.name }}</a>
+            </strong>
+          </div>
+          <div>
             {% if product.available %}
-              <span class="badge badge-success">Active</span>
+              <span class="poke-status-good">Active</span>
             {% else %}
-              <span class="badge badge-secondary">Inactive</span>
+              <span class="poke-status-bad">Inactive</span>
             {% endif %}
-          </td>
-          <td>{{ product.category_name if product.category_name else "Uncategorized" }}</td>
-          <td>
+          </div>
+        </div>
+        <div class="poke-line mb-3 flex-wrap" style="gap: 8px;">
+          <span class="poke-caption">{{ product.category_name if product.category_name else "Uncategorized" }}</span>
+          <span class="poke-caption">·</span>
+          <span class="poke-caption">
             {% if product.min_price is not none %}
-              ${{ product.min_price }}
+              From P${{ product.min_price }}
             {% else %}
-              N/A
+              No active listings
             {% endif %}
-          </td>
-          <td>
+          </span>
+          <span class="poke-caption">·</span>
+          <span class="poke-caption">
             {% if product.avg_rating is not none %}
-              {{ "%.2f"|format(product.avg_rating|float) }}
+              {{ "%.2f"|format(product.avg_rating|float) }} avg
             {% else %}
               No ratings
             {% endif %}
-          </td>
-          <td>{{ product.seller_count if product.seller_count is not none else 0 }}</td>
-          <td>
-            <div class="d-flex flex-wrap gap-2">
-              <a class="btn btn-sm btn-outline-primary" href="{{ url_for('products.edit_product', product_id=product.id) }}">
-                Edit
-              </a>
-              <a class="btn btn-sm btn-outline-dark" href="{{ url_for('products.product_detail', product_id=product.id) }}">
-                View
-              </a>
-              {% if product.available %}
-              <form action="{{ url_for('products.deactivate_product', product_id=product.id) }}" method="POST"
-                    onsubmit="return confirm('Deactivate this product? It will disappear from public browsing.');">
-                <input type="hidden" name="next" value="{{ url_for('products.my_products') }}">
-                <button class="btn btn-sm btn-outline-danger" type="submit">Deactivate</button>
-              </form>
-              {% endif %}
-            </div>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </span>
+          <span class="poke-caption">·</span>
+          <span class="poke-caption">{{ product.seller_count if product.seller_count is not none else 0 }} seller{{ 's' if (product.seller_count or 0) != 1 else '' }}</span>
+        </div>
+        <div class="poke-line flex-wrap" style="gap: 10px;">
+          {% if product.creator_id == current_user.id %}
+          <a class="btn-poke-alt" href="{{ url_for('products.edit_product', product_id=product.id) }}">Edit</a>
+          {% endif %}
+          <a class="btn-poke-alt" href="{{ url_for('products.product_detail', product_id=product.id) }}">View listing</a>
+          {% if product.seller_is_listing or product.seller_out_of_stock %}
+          <form action="{{ url_for('products.my_inventory_remove', product_id=product.id) }}" method="POST" class="d-inline"
+                onsubmit="return confirm('Remove your listing for this product? Your inventory row will be deleted. The product stays on the site for other sellers; past sales still count in Sales &amp; popularity.');">
+            <input type="hidden" name="next" value="{{ url_for('products.my_products', page=portal_page, per_page=portal_per_page, catalog_filter=portal_catalog_filter) }}">
+            <button class="btn-poke-alt" type="submit">Remove from inventory</button>
+          </form>
+          {% endif %}
+          {% if product.creator_id == current_user.id and product.available %}
+          <form action="{{ url_for('products.deactivate_product', product_id=product.id) }}" method="POST" class="d-inline"
+                onsubmit="return confirm('Deactivate this product? It will disappear from public browsing.');">
+            <input type="hidden" name="next" value="{{ url_for('products.my_products', page=portal_page, per_page=portal_per_page, catalog_filter=portal_catalog_filter) }}">
+            <button class="btn-poke-danger" type="submit">Deactivate</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if portal_total_pages > 1 %}
+    <div class="d-flex justify-content-end flex-wrap mt-3" style="gap: 10px;">
+      {% if portal_page > 1 %}
+      <a class="btn-poke-alt" href="{{ url_for('products.my_products', page=portal_page - 1, per_page=portal_per_page, catalog_filter=portal_catalog_filter) }}">Previous</a>
+      {% endif %}
+      {% if portal_page < portal_total_pages %}
+      <a class="btn-poke-alt" href="{{ url_for('products.my_products', page=portal_page + 1, per_page=portal_per_page, catalog_filter=portal_catalog_filter) }}">Next</a>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <p class="poke-subtitle mb-0">
+      {% if portal_catalog_filter != 'all' %}
+      No products match <strong>Show → {{ {'created': 'You created', 'listed': 'In your inventory', 'out_of_stock': 'Out of stock'}[portal_catalog_filter] }}</strong>. Try another filter or choose <strong>All products</strong>.
+      {% else %}
+      Nothing here yet—no created catalog entries, inventory rows, or sales. Use <strong>Create product</strong> or add items on your <strong>Storefront</strong>.
+      {% endif %}
+    </p>
+    {% endif %}
   </div>
-  {% else %}
-    <div class="card shadow-sm">
-      <div class="card-body">
-        <p class="mb-0">You have not created any products yet.</p>
+
+  <div class="poke-panel section-spacer">
+    <h3 class="poke-panel-title mb-2">Sales &amp; popularity</h3>
+    <p class="poke-subtitle mb-4">
+      Rows include every product you <strong>currently list in inventory</strong> or have <strong>ever sold</strong> as the seller.
+      Order stats use only <strong>non-cancelled</strong> orders where the buyer checked out with <strong>you</strong> as the seller on that line.
+      <strong>Orders</strong> counts distinct order IDs (a single order of 10 units counts as one order).
+      <strong>Popularity</strong> is how many of those distinct orders included this product in the <strong>last 30 days</strong>.
+      <strong>Reviews</strong> are product-wide (all buyers), not seller-specific.
+    </p>
+
+    <div class="row mb-4">
+      <div class="col-md-4 mb-3 mb-md-0">
+        <div class="poke-card h-100">
+          <div class="poke-caption">Units sold (all time)</div>
+          <div class="poke-price" style="font-size: 1.75rem;">{{ seller_summary.total_units }}</div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3 mb-md-0">
+        <div class="poke-card h-100">
+          <div class="poke-caption">Your revenue (P$)</div>
+          <div class="poke-price" style="font-size: 1.75rem;">{{ '%.2f'|format(seller_summary.total_revenue) }}</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="poke-card h-100">
+          <div class="poke-caption">Orders with your lines</div>
+          <div class="poke-price" style="font-size: 1.75rem;">{{ seller_summary.order_count }}</div>
+        </div>
       </div>
     </div>
-  {% endif %}
+
+    <h4 class="section-title mb-3">Trend — last 6 months (units)</h4>
+    {% if seller_monthly %}
+      <div class="mb-4">
+        {% for m in seller_monthly %}
+        <div class="mb-3">
+          <div class="poke-line mb-1">
+            <span class="font-weight-bold">{{ m.label }}</span>
+            <span class="poke-caption">{{ m.units }} unit{{ 's' if m.units != 1 else '' }} · P${{ '%.2f'|format(m.revenue) }}</span>
+          </div>
+          <div class="stock-bar" style="height: 12px;">
+            {% set w = (m.units / seller_max_month_units * 100) if seller_max_month_units else 0 %}
+            <div class="stock-bar-fill" style="width: {{ w|round(1) }}%; min-width: {% if m.units > 0 %}4px{% else %}0{% endif %};"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="poke-subtitle mb-4">No sales in the last six months yet. When orders roll in, you will see a month-by-month trend here.</p>
+    {% endif %}
+
+    <h4 class="section-title mb-3">Inventory &amp; order history</h4>
+    {% if seller_by_product %}
+    <div class="poke-log-list">
+      {% for row in seller_by_product %}
+      <div class="poke-log-row">
+        <div class="poke-line mb-2 align-items-start flex-wrap" style="gap: 12px;">
+          <div style="min-width: 0;">
+            <strong style="font-size: 1.1rem;">
+              <a href="{{ url_for('products.product_detail', product_id=row.product_id) }}">{{ row.name }}</a>
+            </strong>
+            {% if not row.available %}
+              <span class="poke-status-bad ms-2" style="font-size: 0.75rem;">Inactive</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="row mb-2">
+          <div class="col-6 col-md-3 mb-2 mb-md-0">
+            <div class="poke-caption">Your stock</div>
+            <strong>{{ row.stock_on_hand }}</strong>
+          </div>
+          <div class="col-6 col-md-3 mb-2 mb-md-0">
+            <div class="poke-caption">Units sold</div>
+            <strong>{{ row.units_sold }}</strong>
+          </div>
+          <div class="col-6 col-md-3 mb-2 mb-md-0">
+            <div class="poke-caption">Revenue (P$)</div>
+            <strong>{{ '%.2f'|format(row.revenue) }}</strong>
+          </div>
+          <div class="col-6 col-md-3 mb-2 mb-md-0">
+            <div class="poke-caption">Orders</div>
+            <strong>{{ row.order_count }}</strong>
+          </div>
+        </div>
+        <div class="mb-2">
+          <div class="poke-line mb-1">
+            <span class="poke-caption">Popularity (orders, last 30 days)</span>
+            <span class="poke-caption">{{ row.orders_last_30d }} order{{ 's' if row.orders_last_30d != 1 else '' }}</span>
+          </div>
+          <div class="stock-bar" style="height: 10px; max-width: 320px;">
+            {% set pp = (row.orders_last_30d / seller_max_popularity * 100) if seller_max_popularity else 0 %}
+            <div class="stock-bar-fill" style="width: {{ pp|round(1) }}%; min-width: {% if row.orders_last_30d > 0 %}4px{% else %}0{% endif %};"></div>
+          </div>
+        </div>
+        <div class="poke-caption">
+          Reviews (product):
+          {% if row.review_count > 0 %}
+            {{ '%.1f'|format(row.avg_rating) }} ({{ row.review_count }})
+          {% else %}
+            —
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="poke-subtitle mb-0">No products yet. When you add inventory or complete a sale, those SKUs will show up here with stats.</p>
+    {% endif %}
+  </div>
 </div>
 
 {% endblock %}
