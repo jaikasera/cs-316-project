@@ -111,6 +111,17 @@
 				</div>
 			</div>
 
+			{% if is_seller %}
+			<div class="card mt-4">
+				<div class="card-body">
+					<h4 class="card-title mb-3">Seller Tools</h4>
+					<p class="mb-2">Manage your inventory and view your storefront.</p>
+					<a class="btn btn-outline-primary mr-2" href="{{ url_for('products.seller_inventory_page', seller_id=current_user.id) }}">My Inventory</a>
+					<a class="btn btn-outline-secondary" href="{{ url_for('products.my_products') }}">My Products</a>
+				</div>
+			</div>
+			{% endif %}
+
 			<div class="card mt-4">
 				<div class="card-body">
 					<h4 class="card-title mb-3">Find a User Profile</h4>

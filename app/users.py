@@ -123,7 +123,13 @@ def balance():
         sort_by='date_desc',
     )
 
-    return render_template('account.html', recent_orders=orders)
+    storefront = InventoryItem.get_storefront_stats(current_user.id)
+    is_seller = bool(
+        storefront is not None
+        and (storefront[4] or storefront[5] or storefront[9])
+    )
+
+    return render_template('account.html', recent_orders=orders, is_seller=is_seller)
 
 
 @bp.route('/users/public')
