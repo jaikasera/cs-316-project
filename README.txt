@@ -102,6 +102,8 @@ Sellers Guru: responsible for Inventory / Order Fulfillment - Evan Bulan
 
 FINAL SUBMISSION
 
+Video Link: https://www.youtube.com/watch?v=4GiPTLRJRE4
+
 Products Guru: responsible for Products — Shambhavi Sinha
     * db/generated/gen.py now builds a larger marketplace-style seed dataset with hundreds of users, thousands of category-aware products, multi-seller inventory, popularity-weighted reviews, realistic price spreads, mixed stock levels, and repeat cart/order patterns.
     * The generator is intentionally category-driven so products in Books, Electronics, Home, Clothing, Sports, Beauty, Grocery, Pet Supplies, and Office read like real listings instead of generic Faker text.
@@ -152,4 +154,14 @@ Social Guru: responsible for Feedback / Messaging — Blake Passe
     * Verified the new endpoints against the existing seller storefront and order history pages so review entry points appear in every place a buyer naturally lands after a purchase, not just on the product detail page.
     * Updated this README with a Social Guru section describing every shipping change above, and added an explicit acknowledgement that LLM tools were used for assistance during this assignment.
 
+Users Guru — Darren Li
+    * Added a top-bar logout control for authenticated users in the global header.
+    * Added `account.html` page and updated the route to render it (`/account`, endpoint `users.balance`).
+    * In account/dashboard: 
+        * added box to display current balance and accept add/withdraw POST requests
+        * added box to display a "Recent Purchases" card listing newest orders with summary rows (order #, date, items, total, fulfillment status) linked to the order detail page
+        * added "Find a User Profile" feature to search by user ID and displays the current user's account id
+            * Implemented a public user profile view (`/users/public`) and template that shows account number and name; when the user is a seller it also shows email, address, storefront stats, average rating and a table of seller reviews
+    * Created and edited demo video
+    
 LLMs were used to assist with this assignment.
